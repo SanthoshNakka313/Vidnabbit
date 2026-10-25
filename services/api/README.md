@@ -14,14 +14,19 @@ uv run pytest -m network                  # live smoke tests (hit real sites)
 uv run ruff check .
 ```
 
-Then run the web app (`npm run dev` in `apps/web`) and open http://localhost:3000. With Docker instead: `docker compose up --build` from the repo root.
+Then run the web app (`npm run dev` in `apps/web`) and open http://localhost:3000. With Docker instead: `docker compose up --build` from the repo root (API, download worker and Redis).
+
+### Job queue
+
+- `QUEUE_BACKEND=inline` (default): downloads run inside the API process. Fine for local dev; one process only.
+- `QUEUE_BACKEND=redis` (required in production): the API stores the job in Redis and enqueues it; workers run the download. Start workers with `uv run arq app.worker.WorkerSettings`. Add workers to scale downloads; each runs `WORKER_CONCURRENCY` jobs at once. Workers finish running jobs for up to `WORKER_SHUTDOWN_GRACE_SECONDS` on shutdown.
 
 Settings come from environment variables or `.env` (see `.env.example`). Every setting has a safe local default; `APP_ENV=production` refuses to start without real secrets, an egress proxy and a real Turnstile key.
 
 ## How a request flows
 
 1. `POST /v1/extract`: rate limits → Turnstile (after 5 extracts in 10 min) → SSRF check (`ssrf.py`, every DNS answer must be public) → DRM denylist, kill switches and rights-holder blocklist (`policy.py`) → yt-dlp metadata extraction in a sandboxed child process (`sandbox.py` → `sandbox_runner.py` → `ytdlp_core.py`) → policy re-checked on the metadata → presets built (`extractor.py`).
-2. `POST /v1/jobs`: Turnstile always → the job runner (`jobs.py`) re-extracts in a fresh child, re-checks policy, downloads, merges/converts with ffmpeg (local files only) and stores the file for at most 1 hour (`storage.py`).
+2. `POST /v1/jobs`: Turnstile always → per-client and queue-depth caps → the job is queued (in process, or in Redis for a worker: `queue.py`, `worker.py`). The download (`jobs.perform_download`) re-extracts in a fresh child, re-checks policy, downloads, merges/converts with ffmpeg (local files only) and stores the file for at most 1 hour (`storage.py`).
 3. `GET /v1/jobs/{id}` is polled for progress. The file is served by a presigned R2 URL that expires with the file (`STORAGE_BACKEND=r2`), or locally by `GET /v1/files/{token}` with an HMAC-signed, expiring token.
 
 Inside the child, every connection yt-dlp opens (redirects, CDN and HLS/DASH segment URLs) is SSRF-checked at connect time on the resolved address. In production an egress proxy is the authoritative control (docs/02 ADR-004).
@@ -37,7 +42,8 @@ Inside the child, every connection yt-dlp opens (redirects, CDN and HLS/DASH seg
 | `extractor.py` | Presets and the async facade over the sandbox |
 | `ytdlp_core.py` | The only yt-dlp option builder; runs inside the child |
 | `sandbox.py`, `sandbox_runner.py` | Child process with rlimits, scrubbed env, JSON-lines protocol |
-| `jobs.py` | In-memory job queue and janitor (Redis + arq in production) |
+| `jobs.py` | Shared download step, in-process job runner and janitor |
+| `queue.py`, `worker.py` | Redis job records, caps and byte quota; the arq download worker and sweeper |
 | `storage.py` | Local and R2 storage, signed tokens, safe filenames, expiry sweeps |
 | `ratelimit.py`, `turnstile.py`, `takedown.py`, `cache.py`, `errors.py` | As named |
 
@@ -50,6 +56,7 @@ Inside the child, every connection yt-dlp opens (redirects, CDN and HLS/DASH seg
 
 ## Not built yet
 
-- The Redis/arq queue: jobs run in-process, so the API is a single instance for now.
+- Running **more than one API instance**: rate limits, extract results and caches are still per process, and the blocklist is a file. Run one API with any number of workers until rate limits move to Redis and the blocklist to Postgres.
+- Extraction still runs in a sandbox child of the API process; docs/02 ADR-003 moves it to an `extract` worker queue.
 - Postgres for takedowns and the blocklist (they are JSON files under `DATA_DIR` for now).
 - The egress proxy (Smokescreen) container and the infra in docs/02 section 8.

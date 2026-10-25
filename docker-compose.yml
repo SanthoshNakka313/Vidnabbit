@@ -1,21 +1,49 @@
-# Local dev stack for the API, hardened like production (docs/02 section 3).
-# The web app runs outside Docker: `npm run dev` in apps/web.
+# Local dev stack, hardened like production (docs/02 section 3): API + download
+# worker + Redis. The web app runs outside Docker: `npm run dev` in apps/web.
 #   docker compose up --build
+x-hardening: &hardening
+  read_only: true
+  tmpfs: ["/tmp:size=64m,noexec"]
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+
+x-app-env: &app-env
+  APP_ENV: development
+  QUEUE_BACKEND: redis
+  REDIS_URL: redis://redis:6379/0
+  CORS_ORIGINS: http://localhost:3000
+  PUBLIC_BASE_URL: http://localhost:8000
+  # Fixed secrets so the API and worker agree; development values only.
+  SIGNING_SECRET: dev-only-signing-secret
+  IP_HASH_KEY_SEED: dev-only-ip-seed
+
 services:
   api:
     build: services/api
     ports: ["127.0.0.1:8000:8000"]
-    environment:
-      APP_ENV: development
-      CORS_ORIGINS: http://localhost:3000
-      PUBLIC_BASE_URL: http://localhost:8000
-    read_only: true
-    tmpfs: ["/tmp:size=64m,noexec"]
+    environment: *app-env
+    volumes: ["work:/work"]  # shared with the worker: local files, blocklist, takedowns
+    depends_on: [redis]
+    pids_limit: 512
+    mem_limit: 1g
+    <<: *hardening
+
+  worker:
+    build: services/api
+    command: ["arq", "app.worker.WorkerSettings"]
+    environment: *app-env
     volumes: ["work:/work"]
-    cap_drop: [ALL]
-    security_opt: ["no-new-privileges:true"]
+    depends_on: [redis]
+    healthcheck: {disable: true}  # the image's check probes the API port
     pids_limit: 512
     mem_limit: 3g
+    stop_grace_period: 10m  # let running downloads finish (WORKER_SHUTDOWN_GRACE_SECONDS)
+    <<: *hardening
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]  # ephemeral by design
+    <<: *hardening
 
 volumes:
   work:

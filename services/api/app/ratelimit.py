@@ -125,11 +125,11 @@ class ByteQuota:
         self._log: dict[str, deque[tuple[float, int]]] = {}
         self._lock = threading.Lock()
 
-    def add(self, client: str, nbytes: int) -> None:
+    async def add(self, client: str, nbytes: int) -> None:
         with self._lock:
             self._log.setdefault(client, deque()).append((self._clock(), int(nbytes)))
 
-    def check(self, client: str, upcoming: int = 0) -> None:
+    async def check(self, client: str, upcoming: int = 0) -> None:
         with self._lock:
             now = self._clock()
             q = self._log.get(client, deque())

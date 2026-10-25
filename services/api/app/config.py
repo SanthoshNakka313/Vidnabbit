@@ -64,6 +64,11 @@ class Settings(BaseSettings):
     turnstile_timeout_seconds: float = 5.0
     turnstile_require_takedown: bool = False  # flip on once the web form sends a token
 
+    # Job queue: inline = in-process (one API process); redis = arq workers (production)
+    queue_backend: Literal["inline", "redis"] = "inline"
+    redis_url: str = "redis://localhost:6379/0"
+    worker_shutdown_grace_seconds: int = 600  # finish running jobs on SIGTERM
+
     # Storage / dirs
     storage_backend: Literal["local", "r2"] = "local"
     r2_account_id: str | None = None
@@ -183,6 +188,8 @@ class Settings(BaseSettings):
                 problems.append("refusing to run as root")
             if self.storage_backend == "local":
                 problems.append("STORAGE_BACKEND=local is for development only")
+            if self.queue_backend != "redis":
+                problems.append("QUEUE_BACKEND=redis is required (workers run downloads)")
             if problems:
                 raise ValueError("Invalid production configuration: " + "; ".join(problems))
         if self.storage_backend == "r2":

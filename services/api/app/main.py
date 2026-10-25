@@ -27,6 +27,7 @@ from app.errors import ApiError, ErrorCode
 from app.extractor import Extractor, ExtractResult, resolve_ffmpeg_location
 from app.jobs import JobRunner
 from app.policy import JsonFileBlocklist, KillSwitches, Limits, Policy, canonicalize_url
+from app.queue import RedisByteQuota, RedisJobQueue
 from app.ratelimit import DAY, HOUR, MINUTE, ByteQuota, ClientHasher, RateLimiter, Rule
 from app.sandbox import Sandbox, SandboxLimits
 from app.ssrf import SSRFError, avalidate_url, set_extra_denied_networks
@@ -193,9 +194,9 @@ class Services:
     policy: Policy
     extractor: Any  # Extractor-compatible: async extract(url) / download(...)
     storage: Storage
-    runner: JobRunner
+    runner: JobRunner | RedisJobQueue  # same async interface
     limiter: RateLimiter
-    bytes_quota: ByteQuota
+    bytes_quota: ByteQuota | RedisByteQuota
     hasher: ClientHasher
     turnstile: TurnstileVerifier
     takedowns: TakedownStore
@@ -205,12 +206,10 @@ class Services:
     trusted_proxies: list[ipaddress.IPv4Network | ipaddress.IPv6Network]
 
 
-def build_services(settings: Settings, extractor: Any | None = None,
-                   storage: Storage | None = None) -> Services:
+def build_policy(settings: Settings) -> Policy:
     set_extra_denied_networks(settings.extra_denied_list)
-    blocklist = JsonFileBlocklist(settings.blocklist_path)
-    policy = Policy(
-        blocklist,
+    return Policy(
+        JsonFileBlocklist(settings.blocklist_path),
         Limits(settings.max_duration_seconds, settings.max_filesize_bytes),
         KillSwitches(
             extraction_enabled=settings.extraction_enabled,
@@ -220,55 +219,74 @@ def build_services(settings: Settings, extractor: Any | None = None,
                 s.strip().lower() for s in settings.disabled_domains.split(",") if s.strip()),
         ),
     )
+
+
+def build_extractor(settings: Settings, policy: Policy) -> Extractor:
     work_dir = settings.work_dir.resolve()
-    if extractor is None:
-        sandbox = Sandbox(
-            home=work_dir / ".home",
-            proxy_url=settings.egress_proxy_url,
-            limits=SandboxLimits(cpu_seconds=int(settings.job_timeout_seconds),
-                                 file_size_bytes=int(settings.max_filesize_bytes * 1.05)),
-        )
-        opts_cfg = {
-            "socket_timeout": settings.socket_timeout_seconds,
-            "ffmpeg_location": resolve_ffmpeg_location(settings.ffmpeg_location,
-                                                       work_dir / ".bin"),
-            "proxy": settings.egress_proxy_url,
-            "max_filesize": settings.max_filesize_bytes,
-            "max_gallery_items": settings.max_gallery_items,
-            "extra_denied": settings.extra_denied_list,
-        }
-        extractor = Extractor(
-            policy, sandbox, opts_cfg=opts_cfg,
-            extract_timeout=settings.extract_timeout_seconds,
-            job_timeout=settings.job_timeout_seconds,
-            max_extract_concurrency=settings.extract_max_concurrency,
-            max_gallery_items=settings.max_gallery_items,
-        )
-    if storage is None:
-        if settings.storage_backend == "r2":
-            storage = R2Storage.from_settings(
-                account_id=settings.r2_account_id or "",
-                access_key_id=settings.r2_access_key_id or "",
-                secret_access_key=settings.r2_secret_access_key.get_secret_value()
-                if settings.r2_secret_access_key else "",
-                bucket=settings.r2_bucket or "",
-                endpoint_url=settings.r2_endpoint_url,
-                proxy_url=settings.egress_proxy_url,
-            )
-        else:
-            storage = LocalStorage(settings.storage_dir, settings.signing_key(),
-                                   settings.public_base_url)
-    bytes_quota = ByteQuota(settings.bytes_per_client_hour, settings.bytes_per_client_day)
-    runner = JobRunner(
-        extractor, storage, work_dir=work_dir,
-        concurrency=settings.worker_concurrency,
-        max_queue_depth=settings.max_queue_depth,
-        max_active_per_client=settings.max_active_jobs_per_client,
-        file_ttl_seconds=settings.file_ttl_seconds,
-        max_queue_wait_seconds=settings.job_queue_max_wait_seconds,
-        janitor_interval_seconds=settings.janitor_interval_seconds,
-        on_complete=bytes_quota.add,
+    sandbox = Sandbox(
+        home=work_dir / ".home",
+        proxy_url=settings.egress_proxy_url,
+        limits=SandboxLimits(cpu_seconds=int(settings.job_timeout_seconds),
+                             file_size_bytes=int(settings.max_filesize_bytes * 1.05)),
     )
+    opts_cfg = {
+        "socket_timeout": settings.socket_timeout_seconds,
+        "ffmpeg_location": resolve_ffmpeg_location(settings.ffmpeg_location, work_dir / ".bin"),
+        "proxy": settings.egress_proxy_url,
+        "max_filesize": settings.max_filesize_bytes,
+        "max_gallery_items": settings.max_gallery_items,
+        "extra_denied": settings.extra_denied_list,
+    }
+    return Extractor(
+        policy, sandbox, opts_cfg=opts_cfg,
+        extract_timeout=settings.extract_timeout_seconds,
+        job_timeout=settings.job_timeout_seconds,
+        max_extract_concurrency=settings.extract_max_concurrency,
+        max_gallery_items=settings.max_gallery_items,
+    )
+
+
+def build_storage(settings: Settings) -> Storage:
+    if settings.storage_backend == "r2":
+        return R2Storage.from_settings(
+            account_id=settings.r2_account_id or "",
+            access_key_id=settings.r2_access_key_id or "",
+            secret_access_key=settings.r2_secret_access_key.get_secret_value()
+            if settings.r2_secret_access_key else "",
+            bucket=settings.r2_bucket or "",
+            endpoint_url=settings.r2_endpoint_url,
+            proxy_url=settings.egress_proxy_url,
+        )
+    return LocalStorage(settings.storage_dir, settings.signing_key(), settings.public_base_url)
+
+
+def build_services(settings: Settings, extractor: Any | None = None,
+                   storage: Storage | None = None, redis_pool: Any | None = None) -> Services:
+    policy = build_policy(settings)
+    if extractor is None:
+        extractor = build_extractor(settings, policy)
+    if storage is None:
+        storage = build_storage(settings)
+    runner: JobRunner | RedisJobQueue
+    bytes_quota: ByteQuota | RedisByteQuota
+    if settings.queue_backend == "redis":
+        runner = RedisJobQueue(redis_url=settings.redis_url, pool=redis_pool,
+                               max_queue_depth=settings.max_queue_depth,
+                               max_active_per_client=settings.max_active_jobs_per_client)
+        bytes_quota = RedisByteQuota(runner, settings.bytes_per_client_hour,
+                                     settings.bytes_per_client_day)
+    else:
+        bytes_quota = ByteQuota(settings.bytes_per_client_hour, settings.bytes_per_client_day)
+        runner = JobRunner(
+            extractor, storage, work_dir=settings.work_dir.resolve(),
+            concurrency=settings.worker_concurrency,
+            max_queue_depth=settings.max_queue_depth,
+            max_active_per_client=settings.max_active_jobs_per_client,
+            file_ttl_seconds=settings.file_ttl_seconds,
+            max_queue_wait_seconds=settings.job_queue_max_wait_seconds,
+            janitor_interval_seconds=settings.janitor_interval_seconds,
+            on_complete=bytes_quota.add,
+        )
     return Services(
         settings=settings, policy=policy, extractor=extractor, storage=storage, runner=runner,
         limiter=RateLimiter(), bytes_quota=bytes_quota,
@@ -287,11 +305,11 @@ def build_services(settings: Settings, extractor: Any | None = None,
 
 
 def create_app(settings: Settings | None = None, *, extractor: Any | None = None,
-               storage: Storage | None = None) -> FastAPI:
+               storage: Storage | None = None, redis_pool: Any | None = None) -> FastAPI:
     settings = settings or get_settings()
     logging.basicConfig(level=settings.log_level.upper(),
                         format="%(asctime)s %(levelname)s %(name)s %(message)s")
-    svc = build_services(settings, extractor=extractor, storage=storage)
+    svc = build_services(settings, extractor=extractor, storage=storage, redis_pool=redis_pool)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
@@ -435,21 +453,21 @@ def create_app(settings: Settings | None = None, *, extractor: Any | None = None
         preset = record.result.preset(body.format_id)
         if preset is None:
             raise ApiError(ErrorCode.INVALID_REQUEST, "Unknown format for this link.")
-        svc.bytes_quota.check(client, int(preset.public.get("filesize_bytes") or 0))
-        svc.runner.check_capacity(client)
+        await svc.bytes_quota.check(client, int(preset.public.get("filesize_bytes") or 0))
+        await svc.runner.check_capacity(client)
         await svc.turnstile.verify(body.turnstile_token, action="job", remote_ip=ip)
         svc.policy.check_url(record.result.webpage_url)
-        job = svc.runner.submit(client, record.result.webpage_url, preset)
-        return {"job_id": job.id}
+        job_id = await svc.runner.submit(client, record.result.webpage_url, preset)
+        return {"job_id": job_id}
 
     @app.get("/v1/jobs/{job_id}")
     async def get_job(job_id: str, req: Request) -> dict[str, Any]:
         client = svc.hasher.client_id(client_ip(req))
         svc.limiter.hit(client, [Rule("status", settings.rate_job_status_per_minute, MINUTE)])
-        job = svc.runner.get(job_id)
-        if job is None:
+        status = await svc.runner.status(job_id)
+        if status is None:
             raise ApiError(ErrorCode.NOT_FOUND, "Job not found or expired.")
-        return job.public()
+        return status
 
     @app.get("/v1/files/{token}")
     async def get_file(token: str, req: Request) -> FileResponse:

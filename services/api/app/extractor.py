@@ -72,6 +72,19 @@ class ResolvedPreset:
     def task(self) -> dict[str, Any]:
         return {"spec": self.spec, "mode": self.mode, "playlist_index": self.playlist_index}
 
+    def to_dict(self) -> dict[str, Any]:
+        """JSON-safe form for the Redis job record (read back by the worker)."""
+        return {"format_id": self.format_id, "mode": self.mode, "spec": self.spec,
+                "ext": self.ext, "public": self.public, "playlist_index": self.playlist_index}
+
+    @classmethod
+    def from_dict(cls, d: Mapping[str, Any]) -> ResolvedPreset:
+        if d["mode"] not in ("video", "audio_mp3", "audio_m4a", "image"):
+            raise ValueError("unknown preset mode")
+        index = d.get("playlist_index")
+        return cls(str(d["format_id"]), d["mode"], str(d["spec"]), str(d["ext"]),
+                   dict(d["public"]), int(index) if index is not None else None)
+
 
 @dataclass
 class ExtractResult:

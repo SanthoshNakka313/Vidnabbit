@@ -65,14 +65,15 @@ def test_client_hash_rotates_daily_and_hides_ip() -> None:
     assert h.client_id("203.0.113.9") != a
 
 
-def test_byte_quota() -> None:
+@pytest.mark.anyio
+async def test_byte_quota() -> None:
     clock = Clock()
     q = ByteQuota(per_hour=100, per_day=150, clock=clock)
-    q.check("c", 100)
-    q.add("c", 90)
+    await q.check("c", 100)
+    await q.add("c", 90)
     with pytest.raises(ApiError):
-        q.check("c", 20)
+        await q.check("c", 20)
     clock.t += 3600
-    q.check("c", 50)  # hour window reset, day still has 90
+    await q.check("c", 50)  # hour window reset, day still has 90
     with pytest.raises(ApiError):
-        q.check("c", 61)
+        await q.check("c", 61)
