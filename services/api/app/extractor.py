@@ -101,6 +101,40 @@ class ExtractResult:
     def preset(self, format_id: str) -> ResolvedPreset | None:
         return next((p for p in self.presets if p.format_id == format_id), None)
 
+    def to_dict(self) -> dict[str, Any]:
+        return {"source_site": self.source_site, "source_url": self.source_url,
+                "webpage_url": self.webpage_url, "title": self.title, "uploader": self.uploader,
+                "duration_seconds": self.duration_seconds, "thumbnail_url": self.thumbnail_url,
+                "media_type": self.media_type, "presets": [p.to_dict() for p in self.presets]}
+
+    @classmethod
+    def from_dict(cls, d: Mapping[str, Any]) -> ExtractResult:
+        if d["media_type"] not in ("video", "audio", "image", "gallery"):
+            raise ValueError("unknown media type")
+        return cls(source_site=str(d["source_site"]), source_url=str(d["source_url"]),
+                   webpage_url=str(d["webpage_url"]), title=str(d["title"]),
+                   uploader=d.get("uploader"), duration_seconds=d.get("duration_seconds"),
+                   thumbnail_url=d.get("thumbnail_url"), media_type=d["media_type"],
+                   presets=[ResolvedPreset.from_dict(p) for p in d.get("presets") or []])
+
+
+@dataclass
+class ExtractRecord:
+    """What ``extract_id`` points at: the result, who asked, and when it expires."""
+
+    result: ExtractResult
+    client: str
+    expires_at: float
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"result": self.result.to_dict(), "client": self.client,
+                "expires_at": self.expires_at}
+
+    @classmethod
+    def from_dict(cls, d: Mapping[str, Any]) -> ExtractRecord:
+        return cls(ExtractResult.from_dict(d["result"]), str(d["client"]),
+                   float(d["expires_at"]))
+
 
 @dataclass
 class DownloadedFile:

@@ -24,11 +24,18 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from app.cache import TTLCache
 from app.config import Settings, get_settings
 from app.errors import ApiError, ErrorCode
-from app.extractor import Extractor, ExtractResult, resolve_ffmpeg_location
+from app.extractor import Extractor, ExtractRecord, ExtractResult, resolve_ffmpeg_location
 from app.jobs import JobRunner
 from app.policy import JsonFileBlocklist, KillSwitches, Limits, Policy, canonicalize_url
-from app.queue import RedisByteQuota, RedisJobQueue
+from app.queue import RedisJobQueue
 from app.ratelimit import DAY, HOUR, MINUTE, ByteQuota, ClientHasher, RateLimiter, Rule
+from app.redis_state import (
+    MemoryExtractStore,
+    RedisByteQuota,
+    RedisConnection,
+    RedisExtractStore,
+    RedisRateLimiter,
+)
 from app.sandbox import Sandbox, SandboxLimits
 from app.ssrf import SSRFError, avalidate_url, set_extra_denied_networks
 from app.storage import (
@@ -75,13 +82,6 @@ class JobRequest(BaseModel):
     extract_id: Annotated[str, StringConstraints(min_length=1, max_length=64)]
     format_id: Annotated[str, StringConstraints(min_length=1, max_length=64)]
     turnstile_token: Annotated[str, StringConstraints(max_length=2048)] | None = None
-
-
-@dataclass
-class ExtractRecord:
-    result: ExtractResult
-    client: str
-    expires_at: float
 
 
 def error_response(err: ApiError) -> JSONResponse:
@@ -194,16 +194,17 @@ class Services:
     policy: Policy
     extractor: Any  # Extractor-compatible: async extract(url) / download(...)
     storage: Storage
-    runner: JobRunner | RedisJobQueue  # same async interface
-    limiter: RateLimiter
+    runner: JobRunner | RedisJobQueue  # each pair shares one async interface
+    limiter: RateLimiter | RedisRateLimiter
     bytes_quota: ByteQuota | RedisByteQuota
     hasher: ClientHasher
     turnstile: TurnstileVerifier
     takedowns: TakedownStore
     extract_cache: TTLCache[ExtractResult]
     negative_cache: TTLCache[ApiError]
-    extracts: TTLCache[ExtractRecord]
+    extracts: MemoryExtractStore | RedisExtractStore
     trusted_proxies: list[ipaddress.IPv4Network | ipaddress.IPv6Network]
+    redis: RedisConnection | None = None
 
 
 def build_policy(settings: Settings) -> Policy:
@@ -269,13 +270,22 @@ def build_services(settings: Settings, extractor: Any | None = None,
         storage = build_storage(settings)
     runner: JobRunner | RedisJobQueue
     bytes_quota: ByteQuota | RedisByteQuota
+    limiter: RateLimiter | RedisRateLimiter
+    extracts: MemoryExtractStore | RedisExtractStore
+    redis: RedisConnection | None = None
     if settings.queue_backend == "redis":
-        runner = RedisJobQueue(redis_url=settings.redis_url, pool=redis_pool,
-                               max_queue_depth=settings.max_queue_depth,
+        # Everything a second API instance must agree on lives in Redis.
+        redis = RedisConnection(settings.redis_url, pool=redis_pool)
+        runner = RedisJobQueue(redis, max_queue_depth=settings.max_queue_depth,
                                max_active_per_client=settings.max_active_jobs_per_client)
-        bytes_quota = RedisByteQuota(runner, settings.bytes_per_client_hour,
+        bytes_quota = RedisByteQuota(redis, settings.bytes_per_client_hour,
                                      settings.bytes_per_client_day)
+        limiter = RedisRateLimiter(redis)
+        extracts = RedisExtractStore(redis, settings.extract_ttl_seconds)
     else:
+        limiter = RateLimiter()
+        extracts = MemoryExtractStore(settings.extract_ttl_seconds,
+                                      settings.extract_cache_max_entries * 4)
         bytes_quota = ByteQuota(settings.bytes_per_client_hour, settings.bytes_per_client_day)
         runner = JobRunner(
             extractor, storage, work_dir=settings.work_dir.resolve(),
@@ -289,15 +299,16 @@ def build_services(settings: Settings, extractor: Any | None = None,
         )
     return Services(
         settings=settings, policy=policy, extractor=extractor, storage=storage, runner=runner,
-        limiter=RateLimiter(), bytes_quota=bytes_quota,
+        limiter=limiter, bytes_quota=bytes_quota,
         hasher=ClientHasher(settings.ip_key()), turnstile=TurnstileVerifier(settings),
         takedowns=TakedownStore(settings.takedown_path),
         extract_cache=TTLCache(settings.extract_cache_ttl_seconds,
                                settings.extract_cache_max_entries),
         negative_cache=TTLCache(300, settings.extract_cache_max_entries),
-        extracts=TTLCache(settings.extract_ttl_seconds, settings.extract_cache_max_entries * 4),
+        extracts=extracts,
         trusted_proxies=[ipaddress.ip_network(c, strict=False)
                          for c in settings.trusted_proxy_list],
+        redis=redis,
     )
 
 
@@ -313,12 +324,16 @@ def create_app(settings: Settings | None = None, *, extractor: Any | None = None
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
+        if svc.redis is not None:
+            await svc.redis.start()
         await svc.runner.start()
         try:
             yield
         finally:
             await svc.runner.stop()
             await svc.turnstile.aclose()
+            if svc.redis is not None:
+                await svc.redis.stop()
 
     docs = not settings.is_production
     app = FastAPI(
@@ -383,15 +398,15 @@ def create_app(settings: Settings | None = None, *, extractor: Any | None = None
     async def extract(body: ExtractRequest, req: Request) -> dict[str, Any]:
         ip = client_ip(req)
         client = svc.hasher.client_id(ip)
-        recent = svc.limiter.count(f"extract10m:{client}", 600)
-        svc.limiter.hit(client, [
+        recent = await svc.limiter.count(f"extract10m:{client}", 600)
+        await svc.limiter.hit(client, [
             Rule("extract_m", settings.rate_extract_per_minute, MINUTE),
             Rule("extract_h", settings.rate_extract_per_hour, HOUR),
             Rule("extract_d", settings.rate_extract_per_day, DAY),
         ])
         if recent >= settings.extract_soft_threshold:
             await svc.turnstile.verify(body.turnstile_token, action="extract", remote_ip=ip)
-        svc.limiter.hit(client, [Rule("extract10m", 10**9, 600)])
+        await svc.limiter.hit(client, [Rule("extract10m", 10**9, 600)])
 
         try:
             checked = await avalidate_url(body.url, timeout=settings.dns_timeout_seconds)
@@ -407,7 +422,7 @@ def create_app(settings: Settings | None = None, *, extractor: Any | None = None
             if negative is not None:
                 raise negative
             if not any(checked.host == h or checked.host.endswith("." + h) for h in MAJOR_HOSTS):
-                svc.limiter.hit(checked.host, [Rule("domain", settings.rate_domain_per_minute,
+                await svc.limiter.hit(checked.host, [Rule("domain", settings.rate_domain_per_minute,
                                                     MINUTE)],
                                 message="This site is getting a lot of requests. Try later.")
             try:
@@ -423,7 +438,7 @@ def create_app(settings: Settings | None = None, *, extractor: Any | None = None
 
         extract_id = secrets.token_urlsafe(16)
         expires_at = time.time() + settings.extract_ttl_seconds
-        svc.extracts.set(extract_id, ExtractRecord(result, client, expires_at))
+        await svc.extracts.set(extract_id, ExtractRecord(result, client, expires_at))
         log.info("extract ok host=%s site=%s formats=%d", checked.host, result.source_site,
                  len(result.presets))
         return {
@@ -442,12 +457,12 @@ def create_app(settings: Settings | None = None, *, extractor: Any | None = None
     async def create_job(body: JobRequest, req: Request) -> dict[str, str]:
         ip = client_ip(req)
         client = svc.hasher.client_id(ip)
-        svc.limiter.hit(client, [
+        await svc.limiter.hit(client, [
             Rule("jobs_m", settings.rate_jobs_per_minute, MINUTE),
             Rule("jobs_h", settings.rate_jobs_per_hour, HOUR),
             Rule("jobs_d", settings.rate_jobs_per_day, DAY),
         ])
-        record = svc.extracts.get(body.extract_id)
+        record = await svc.extracts.get(body.extract_id)
         if record is None or (settings.bind_extract_to_client and record.client != client):
             raise ApiError(ErrorCode.NOT_FOUND, "This link has expired. Please paste it again.")
         preset = record.result.preset(body.format_id)
@@ -463,7 +478,7 @@ def create_app(settings: Settings | None = None, *, extractor: Any | None = None
     @app.get("/v1/jobs/{job_id}")
     async def get_job(job_id: str, req: Request) -> dict[str, Any]:
         client = svc.hasher.client_id(client_ip(req))
-        svc.limiter.hit(client, [Rule("status", settings.rate_job_status_per_minute, MINUTE)])
+        await svc.limiter.hit(client, [Rule("status", settings.rate_job_status_per_minute, MINUTE)])
         status = await svc.runner.status(job_id)
         if status is None:
             raise ApiError(ErrorCode.NOT_FOUND, "Job not found or expired.")
@@ -474,7 +489,7 @@ def create_app(settings: Settings | None = None, *, extractor: Any | None = None
         if not isinstance(svc.storage, LocalStorage):
             raise ApiError(ErrorCode.NOT_FOUND)
         client = svc.hasher.client_id(client_ip(req))
-        svc.limiter.hit(client, [Rule("files", settings.rate_files_per_minute, MINUTE)])
+        await svc.limiter.hit(client, [Rule("files", settings.rate_files_per_minute, MINUTE)])
         try:
             key = _verify(svc, token)
         except TokenError:
@@ -495,7 +510,7 @@ def create_app(settings: Settings | None = None, *, extractor: Any | None = None
     async def takedown(body: TakedownRequest, req: Request) -> dict[str, Any]:
         ip = client_ip(req)
         client = svc.hasher.client_id(ip)
-        svc.limiter.hit(client, [
+        await svc.limiter.hit(client, [
             Rule("takedown_h", settings.rate_takedown_per_hour, HOUR),
             Rule("takedown_d", settings.rate_takedown_per_day, DAY),
         ])

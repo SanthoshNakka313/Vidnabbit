@@ -18,28 +18,65 @@ class Clock:
         return self.t
 
 
-def test_sliding_window_and_retry_after() -> None:
+def limiters(clock):
+    """The in-process limiter and the Redis one must behave identically."""
+    import fakeredis
+    from arq.connections import ArqRedis
+
+    from app.redis_state import RedisConnection, RedisRateLimiter
+
+    pool = ArqRedis(connection_pool=fakeredis.aioredis.FakeRedis().connection_pool)
+    return [RateLimiter(clock), RedisRateLimiter(RedisConnection(pool=pool), clock=clock)]
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("which", [0, 1], ids=["memory", "redis"])
+async def test_sliding_window_and_retry_after(which: int) -> None:
     clock = Clock()
-    rl = RateLimiter(clock)
+    rl = limiters(clock)[which]
     rules = [Rule("m", 2, 60)]
-    rl.hit("c", rules)
+    await rl.hit("c", rules)
     clock.t += 10
-    rl.hit("c", rules)
+    await rl.hit("c", rules)
     with pytest.raises(ApiError) as ei:
-        rl.hit("c", rules)
+        await rl.hit("c", rules)
     assert ei.value.code == "rate_limited" and ei.value.headers["Retry-After"] == "50"
-    rl.hit("other", rules)  # independent client
+    await rl.hit("other", rules)  # independent client
     clock.t += 50
-    rl.hit("c", rules)  # the first hit slid out
+    await rl.hit("c", rules)  # the first hit slid out
+    assert await rl.count("m:c", 60) == 2
 
 
-def test_refused_hit_is_not_recorded_against_any_rule() -> None:
+@pytest.mark.anyio
+@pytest.mark.parametrize("which", [0, 1], ids=["memory", "redis"])
+async def test_refused_hit_is_not_recorded_against_any_rule(which: int) -> None:
     clock = Clock()
-    rl = RateLimiter(clock)
-    rl.hit("c", [Rule("tight", 1, 60)])
+    rl = limiters(clock)[which]
+    await rl.hit("c", [Rule("tight", 1, 60)])
     with pytest.raises(ApiError):
-        rl.hit("c", [Rule("loose", 10, 60), Rule("tight", 1, 60)])
-    assert rl.count("loose:c", 60) == 0
+        await rl.hit("c", [Rule("loose", 10, 60), Rule("tight", 1, 60)])
+    assert await rl.count("loose:c", 60) == 0
+
+
+@pytest.mark.anyio
+async def test_redis_limiter_is_shared_between_instances() -> None:
+    import fakeredis
+    from arq.connections import ArqRedis
+
+    from app.redis_state import RedisConnection, RedisRateLimiter
+
+    server = fakeredis.FakeServer()
+
+    def instance() -> RedisRateLimiter:
+        pool = ArqRedis(connection_pool=fakeredis.aioredis.FakeRedis(server=server)
+                        .connection_pool)
+        return RedisRateLimiter(RedisConnection(pool=pool))
+
+    a, b = instance(), instance()  # two API processes, one Redis
+    await a.hit("c", [Rule("m", 2, 60)])
+    await b.hit("c", [Rule("m", 2, 60)])
+    with pytest.raises(ApiError):
+        await a.hit("c", [Rule("m", 2, 60)])
 
 
 @pytest.mark.parametrize(("ip", "bucket"), [

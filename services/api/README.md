@@ -19,7 +19,7 @@ Then run the web app (`npm run dev` in `apps/web`) and open http://localhost:300
 ### Job queue
 
 - `QUEUE_BACKEND=inline` (default): downloads run inside the API process. Fine for local dev; one process only.
-- `QUEUE_BACKEND=redis` (required in production): the API stores the job in Redis and enqueues it; workers run the download. Start workers with `uv run arq app.worker.WorkerSettings`. Add workers to scale downloads; each runs `WORKER_CONCURRENCY` jobs at once. Workers finish running jobs for up to `WORKER_SHUTDOWN_GRACE_SECONDS` on shutdown.
+- `QUEUE_BACKEND=redis` (required in production): the API stores the job in Redis and enqueues it; workers run the download. Rate limits, the byte quota and extract results are kept in Redis too (`redis_state.py`), so several API instances enforce the same limits. All instances must share `IP_HASH_KEY_SEED` and `SIGNING_SECRET`. Start workers with `uv run arq app.worker.WorkerSettings`. Add workers to scale downloads; each runs `WORKER_CONCURRENCY` jobs at once. Workers finish running jobs for up to `WORKER_SHUTDOWN_GRACE_SECONDS` on shutdown.
 
 Settings come from environment variables or `.env` (see `.env.example`). Every setting has a safe local default; `APP_ENV=production` refuses to start without real secrets, an egress proxy and a real Turnstile key.
 
@@ -43,7 +43,8 @@ Inside the child, every connection yt-dlp opens (redirects, CDN and HLS/DASH seg
 | `ytdlp_core.py` | The only yt-dlp option builder; runs inside the child |
 | `sandbox.py`, `sandbox_runner.py` | Child process with rlimits, scrubbed env, JSON-lines protocol |
 | `jobs.py` | Shared download step, in-process job runner and janitor |
-| `queue.py`, `worker.py` | Redis job records, caps and byte quota; the arq download worker and sweeper |
+| `queue.py`, `worker.py` | Redis job records and caps; the arq download worker and sweeper |
+| `redis_state.py` | Shared Redis connection, rate limiter (atomic Lua), byte quota, extract records |
 | `storage.py` | Local and R2 storage, signed tokens, safe filenames, expiry sweeps |
 | `ratelimit.py`, `turnstile.py`, `takedown.py`, `cache.py`, `errors.py` | As named |
 
@@ -56,7 +57,7 @@ Inside the child, every connection yt-dlp opens (redirects, CDN and HLS/DASH seg
 
 ## Not built yet
 
-- Running **more than one API instance**: rate limits, extract results and caches are still per process, and the blocklist is a file. Run one API with any number of workers until rate limits move to Redis and the blocklist to Postgres.
+- Running **more than one API instance** still needs a shared blocklist: takedowns are a JSON file under `DATA_DIR`, so all API instances and workers must share that volume (one host) until it moves to Postgres. Extract caches are per instance by design; they only save work, and every cache hit re-checks the blocklist.
 - Extraction still runs in a sandbox child of the API process; docs/02 ADR-003 moves it to an `extract` worker queue.
 - Postgres for takedowns and the blocklist (they are JSON files under `DATA_DIR` for now).
 - The egress proxy (Smokescreen) container and the infra in docs/02 section 8.

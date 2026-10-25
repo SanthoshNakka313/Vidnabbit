@@ -81,7 +81,7 @@ class RateLimiter:
             q.popleft()
         return q
 
-    def count(self, key: str, window: float) -> int:
+    async def count(self, key: str, window: float) -> int:
         with self._lock:
             now = self._clock()
             q = self._hits.get(key)
@@ -89,7 +89,8 @@ class RateLimiter:
                 return 0
             return sum(1 for t in q if now - t < window)
 
-    def hit(self, client: str, rules: Iterable[Rule], *, message: str | None = None) -> None:
+    async def hit(self, client: str, rules: Iterable[Rule], *,
+                  message: str | None = None) -> None:
         """Record one hit against every rule, or raise rate_limited without recording."""
         rules = list(rules)
         with self._lock:

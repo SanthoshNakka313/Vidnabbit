@@ -27,7 +27,8 @@ from app.config import Settings
 from app.errors import ApiError, ErrorCode
 from app.extractor import ResolvedPreset
 from app.main import create_app
-from app.queue import QUEUE_NAME, active_key, bytes_key, job_key
+from app.queue import QUEUE_NAME, active_key, job_key
+from app.redis_state import bytes_key
 from app.ssrf import validate_url
 from app.worker import startup, worker_options
 
@@ -248,3 +249,26 @@ def test_preset_roundtrip_and_validation() -> None:
 def test_production_requires_redis_queue() -> None:
     with pytest.raises(ValidationError, match="QUEUE_BACKEND=redis"):
         Settings(app_env="production", _env_file=None)
+
+
+def test_two_api_instances_share_state(qsettings, fake) -> None:
+    """Extract on instance A, start the job on B, read status on A; limits are shared."""
+    server = fakeredis.FakeServer()
+    s = qsettings.model_copy(update={"rate_jobs_per_minute": 2})
+    seeded = Settings(**{**s.model_dump(), "ip_hash_key_seed": "shared-seed"}, _env_file=None)
+
+    def instance() -> TestClient:
+        pool = ArqRedis(connection_pool=fakeredis.aioredis.FakeRedis(server=server)
+                        .connection_pool)
+        return TestClient(create_app(seeded, extractor=fake, redis_pool=pool))
+
+    with instance() as a, instance() as b:
+        extract_id = a.post("/v1/extract", json={"url": URL}).json()["id"]
+        body = {"extract_id": extract_id, "format_id": "m4a", "turnstile_token": DUMMY}
+        r = b.post("/v1/jobs", json=body)
+        assert r.status_code == 202, r.text
+        assert a.get(f"/v1/jobs/{r.json()['job_id']}").json()["status"] == "queued"
+        assert a.post("/v1/jobs", json=body).status_code == 202
+        # The third job request in a minute is refused wherever it lands.
+        r = b.post("/v1/jobs", json=body)
+        assert r.status_code == 429, r.text

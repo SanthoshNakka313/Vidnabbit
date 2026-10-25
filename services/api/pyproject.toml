@@ -18,7 +18,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "fakeredis==2.40.0",
+    "fakeredis[lua]==2.40.0",
     # Static ffmpeg binary for local dev/tests (the Docker image uses apt ffmpeg).
     "imageio-ffmpeg==0.6.0",
     "moto[s3]==5.2.4",

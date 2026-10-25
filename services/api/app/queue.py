@@ -7,8 +7,7 @@ Keys (all ephemeral, docs/02 section 2):
 - ``vn:active:<client>``: set of the client's job ids, for the per-client cap.
   Members whose job finished or expired are pruned on read, so a crashed worker
   can't lock a client out.
-- ``vn:bytes:<client>``: sorted set of delivered bytes (score = time), for the
-  hourly/daily byte quota; written by workers, checked by the API.
+- ``vn:bytes:<client>``: delivered bytes for the byte quota (see ``redis_state``).
 - ``arq:queue:download``: the arq queue; its length drives load shedding.
 
 The URL and the hashed client id are stored but never returned to clients.
@@ -22,12 +21,12 @@ import time
 import uuid
 from typing import Any
 
-from arq.connections import ArqRedis, RedisSettings, create_pool
+from arq.connections import ArqRedis
 
 from app.errors import ApiError, ErrorCode
 from app.extractor import ResolvedPreset
 from app.jobs import JOB_ID_RE, JOB_RECORD_TTL, public_status, queue_full, too_many_active
-from app.ratelimit import DAY, HOUR
+from app.redis_state import RedisConnection
 
 log = logging.getLogger(__name__)
 
@@ -41,14 +40,6 @@ def job_key(job_id: str) -> str:
 
 def active_key(client: str) -> str:
     return f"vn:active:{client}"
-
-
-def bytes_key(client: str) -> str:
-    return f"vn:bytes:{client}"
-
-
-async def connect(redis_url: str) -> ArqRedis:
-    return await create_pool(RedisSettings.from_dsn(redis_url))
 
 
 def _s(v: Any) -> str | None:
@@ -74,29 +65,20 @@ def public_from_record(rec: dict[str, str], now: float | None = None) -> dict[st
 class RedisJobQueue:
     """API side of the Redis queue. Same interface as :class:`app.jobs.JobRunner`."""
 
-    def __init__(self, *, redis_url: str | None = None, pool: ArqRedis | None = None,
-                 max_queue_depth: int = 200, max_active_per_client: int = 2) -> None:
-        if pool is None and not redis_url:
-            raise ValueError("redis_url or pool is required")
-        self.redis_url = redis_url
-        self.pool = pool
-        self._owns_pool = pool is None
+    def __init__(self, conn: RedisConnection, *, max_queue_depth: int = 200,
+                 max_active_per_client: int = 2) -> None:
+        self.conn = conn
         self.max_queue_depth = max_queue_depth
         self.max_active_per_client = max_active_per_client
 
-    async def start(self) -> None:
-        if self.pool is None:
-            self.pool = await connect(self.redis_url or "")
+    async def start(self) -> None:  # the connection is opened by the app lifespan
+        return None
 
     async def stop(self) -> None:
-        if self._owns_pool and self.pool is not None:
-            await self.pool.aclose()
-            self.pool = None
+        return None
 
     def _redis(self) -> ArqRedis:
-        if self.pool is None:
-            raise RuntimeError("queue not started")
-        return self.pool
+        return self.conn.pool
 
     async def active_count(self, client: str) -> int:
         r = self._redis()
@@ -171,44 +153,3 @@ async def mark_failed(r: ArqRedis, job_id: str, err: ApiError) -> None:
         pipe.expire(job_key(job_id), JOB_RECORD_TTL)
         await pipe.execute()
     log.info("job failed job=%s code=%s", job_id, err.code)
-
-
-# -------------------------------------------------------------------- byte quota
-
-
-class RedisByteQuota:
-    """Shared version of :class:`app.ratelimit.ByteQuota` (same limits and messages)."""
-
-    def __init__(self, pool_ref: Any, per_hour: int, per_day: int) -> None:
-        self._pool_ref = pool_ref  # object with a .pool attribute (the started queue)
-        self.per_hour, self.per_day = per_hour, per_day
-
-    def _redis(self) -> ArqRedis:
-        return self._pool_ref.pool
-
-    async def add(self, client: str, nbytes: int) -> None:
-        await add_bytes(self._redis(), client, nbytes)
-
-    async def check(self, client: str, upcoming: int = 0) -> None:
-        r = self._redis()
-        now = time.time()
-        await r.zremrangebyscore(bytes_key(client), 0, now - DAY)
-        entries = await r.zrangebyscore(bytes_key(client), now - DAY, "+inf", withscores=True)
-        day = hour = 0
-        for member, score in entries:
-            n = int((_s(member) or "0:0").rsplit(":", 1)[1])
-            day += n
-            if now - score < HOUR:
-                hour += n
-        if hour + upcoming > self.per_hour or day + upcoming > self.per_day:
-            raise ApiError(ErrorCode.RATE_LIMITED,
-                           "You've reached the download limit for now. Please try again later.",
-                           headers={"Retry-After": "3600"})
-
-
-async def add_bytes(r: ArqRedis, client: str, nbytes: int) -> None:
-    now = time.time()
-    async with r.pipeline(transaction=True) as pipe:
-        pipe.zadd(bytes_key(client), {f"{uuid.uuid4().hex}:{int(nbytes)}": now})
-        pipe.expire(bytes_key(client), int(DAY))
-        await pipe.execute()

@@ -30,7 +30,6 @@ from app.queue import (
     QUEUE_NAME,
     TASK_NAME,
     active_key,
-    add_bytes,
     decode_record,
     job_key,
     mark_done,
@@ -38,6 +37,7 @@ from app.queue import (
     mark_running,
     set_progress,
 )
+from app.redis_state import add_bytes
 
 log = logging.getLogger("vidnabbit.worker")
 PROGRESS_FLUSH_SECONDS = 1.0
