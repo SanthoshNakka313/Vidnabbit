@@ -16,14 +16,20 @@ import secrets
 import shutil
 import time
 import unicodedata
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol
+from typing import Any, Protocol
 from urllib.parse import quote
 
 log = logging.getLogger(__name__)
 
 TOKEN_VERSION = 1
+MEDIA_TYPES = {
+    "mp4": "video/mp4", "webm": "video/webm", "mkv": "video/x-matroska", "m4a": "audio/mp4",
+    "mp3": "audio/mpeg", "opus": "audio/ogg", "ogg": "audio/ogg", "jpg": "image/jpeg",
+    "jpeg": "image/jpeg", "png": "image/png", "webp": "image/webp", "gif": "image/gif",
+}
 
 
 # ------------------------------------------------------------------- tokens
@@ -189,26 +195,107 @@ class LocalStorage:
         return removed
 
 
-class R2Storage:  # pragma: no cover - stub
-    """Cloudflare R2 backend (S3-compatible). Not implemented in the first slice.
+class R2Storage:
+    """Cloudflare R2 (S3 API). Files are served by presigned GET, never a public URL.
 
-    Intended implementation: upload with boto3/aioboto3 to ``{bucket}/{job_id}/{file}``
-    with ``ContentDisposition`` set, return a presigned GET URL valid for <= 1 hour,
-    and rely on a bucket lifecycle rule (expire after 1 day, the minimum R2 lifecycle
-    granularity, plus an hourly sweeper that deletes objects older than 1 hour).
+    Keys are ``dl/<upload yyyymmddhh>/<job_id>/<expires_at>-<random>.<ext>``, so the
+    sweeper can tell expiry from a listing alone. Links stop working at expiry
+    because the presigned URL expires then; the sweeper deletes objects soon after,
+    and a bucket lifecycle rule on ``dl/`` (1 day, R2's finest granularity) is
+    only a backstop (docs/02 2.4).
     """
 
-    def __init__(self, *args: object, **kwargs: object) -> None:
-        raise NotImplementedError("R2 storage is not implemented yet; use storage_backend=local")
+    PREFIX = "dl/"
+    PART_SIZE = 64 * 1024**2  # fewer Class A operations than the 8 MB default
+    SWEEP_HOURS = 3  # upload-hour prefixes listed on each sweep (TTL <= 1 h)
+
+    def __init__(self, *, bucket: str, client: Any, sweep_interval_seconds: float = 300,
+                 part_size: int = PART_SIZE, clock: Callable[[], float] = time.time) -> None:
+        from boto3.s3.transfer import TransferConfig
+
+        self.bucket = bucket
+        self.client = client
+        self.sweep_interval_seconds = sweep_interval_seconds
+        self._clock = clock
+        self._last_sweep: float | None = None  # None: first sweep lists all of dl/
+        self._transfer = TransferConfig(multipart_threshold=part_size,
+                                        multipart_chunksize=part_size, use_threads=False)
+
+    @classmethod
+    def from_settings(cls, *, account_id: str, access_key_id: str, secret_access_key: str,
+                      bucket: str, endpoint_url: str | None = None,
+                      proxy_url: str | None = None) -> R2Storage:
+        import boto3
+        from botocore.config import Config
+
+        config = Config(
+            signature_version="s3v4",
+            retries={"max_attempts": 3, "mode": "standard"},
+            # R2 doesn't accept every default checksum newer boto3 sends.
+            request_checksum_calculation="when_required",
+            response_checksum_validation="when_required",
+            proxies={"https": proxy_url} if proxy_url else None,
+        )
+        client = boto3.client(
+            "s3", region_name="auto", config=config,
+            endpoint_url=endpoint_url or f"https://{account_id}.r2.cloudflarestorage.com",
+            aws_access_key_id=access_key_id, aws_secret_access_key=secret_access_key,
+        )
+        return cls(bucket=bucket, client=client)
 
     def put(self, job_id: str, local_path: Path, filename: str, ttl_seconds: int) -> StoredFile:
-        raise NotImplementedError
+        if not re.fullmatch(r"[A-Za-z0-9_-]{8,64}", job_id):
+            raise ValueError("invalid job id")
+        now = self._clock()
+        expires_at = int(now) + ttl_seconds
+        hour = time.strftime("%Y%m%d%H", time.gmtime(now))
+        ext = local_path.suffix.lower()
+        key = f"{self.PREFIX}{hour}/{job_id}/{expires_at}-{secrets.token_urlsafe(12)}{ext}"
+        size = local_path.stat().st_size
+        self.client.upload_file(
+            str(local_path), self.bucket, key, Config=self._transfer,
+            ExtraArgs={"ContentType": MEDIA_TYPES.get(ext.lstrip("."), "application/octet-stream"),
+                       "ContentDisposition": content_disposition(filename),
+                       "CacheControl": "private, no-store"},
+        )
+        local_path.unlink(missing_ok=True)
+        return StoredFile(key=key, filename=filename, size=size, expires_at=expires_at)
 
     def download_url(self, stored: StoredFile) -> str:
-        raise NotImplementedError
-
-    def delete_expired(self, now: float | None = None) -> int:
-        raise NotImplementedError
+        expires_in = max(1, stored.expires_at - int(self._clock()))
+        return self.client.generate_presigned_url(
+            "get_object", Params={"Bucket": self.bucket, "Key": stored.key},
+            ExpiresIn=expires_in)
 
     def delete(self, key: str) -> None:
-        raise NotImplementedError
+        if key.startswith(self.PREFIX):
+            self.client.delete_object(Bucket=self.bucket, Key=key)
+
+    def delete_expired(self, now: float | None = None) -> int:
+        now = now if now is not None else self._clock()
+        if self._last_sweep is not None and now - self._last_sweep < self.sweep_interval_seconds:
+            return 0
+        if self._last_sweep is None:
+            prefixes = [self.PREFIX]  # after a restart: catch anything a crash left behind
+        else:
+            prefixes = [self.PREFIX + time.strftime("%Y%m%d%H", time.gmtime(now - h * 3600)) + "/"
+                        for h in range(self.SWEEP_HOURS)]
+        self._last_sweep = now
+        expired = [key for prefix in prefixes for key in self._keys(prefix)
+                   if _key_expiry(key) is None or now >= _key_expiry(key)]
+        for i in range(0, len(expired), 1000):  # DeleteObjects takes up to 1000 keys
+            self.client.delete_objects(Bucket=self.bucket, Delete={
+                "Objects": [{"Key": k} for k in expired[i:i + 1000]], "Quiet": True})
+        return len(expired)
+
+    def _keys(self, prefix: str) -> Iterator[str]:
+        for page in self.client.get_paginator("list_objects_v2").paginate(
+                Bucket=self.bucket, Prefix=prefix):
+            for obj in page.get("Contents", []):
+                yield obj["Key"]
+
+
+def _key_expiry(key: str) -> int | None:
+    """Expiry from ``.../<expires_at>-<random>.<ext>``; None for unrecognised keys."""
+    m = re.fullmatch(r"dl/\d{10}/[A-Za-z0-9_-]+/(\d{9,11})-[A-Za-z0-9_-]+(\.[a-z0-9]+)?", key)
+    return int(m.group(1)) if m else None

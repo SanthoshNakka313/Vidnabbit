@@ -30,7 +30,14 @@ from app.policy import JsonFileBlocklist, KillSwitches, Limits, Policy, canonica
 from app.ratelimit import DAY, HOUR, MINUTE, ByteQuota, ClientHasher, RateLimiter, Rule
 from app.sandbox import Sandbox, SandboxLimits
 from app.ssrf import SSRFError, avalidate_url, set_extra_denied_networks
-from app.storage import LocalStorage, R2Storage, Storage, TokenError, content_disposition
+from app.storage import (
+    MEDIA_TYPES,
+    LocalStorage,
+    R2Storage,
+    Storage,
+    TokenError,
+    content_disposition,
+)
 from app.takedown import TakedownRequest, TakedownStore
 from app.turnstile import TurnstileVerifier
 
@@ -44,11 +51,6 @@ NEGATIVE_CACHE_CODES = {
 MAJOR_HOSTS = ("youtube.com", "youtu.be", "vimeo.com", "dailymotion.com", "soundcloud.com",
                "twitter.com", "x.com", "instagram.com", "tiktok.com", "reddit.com",
                "facebook.com", "twitch.tv", "archive.org", "wikimedia.org", "bandcamp.com")
-MEDIA_TYPES = {
-    "mp4": "video/mp4", "webm": "video/webm", "mkv": "video/x-matroska", "m4a": "audio/mp4",
-    "mp3": "audio/mpeg", "opus": "audio/ogg", "ogg": "audio/ogg", "jpg": "image/jpeg",
-    "jpeg": "image/jpeg", "png": "image/png", "webp": "image/webp", "gif": "image/gif",
-}
 SECURITY_HEADERS = [
     (b"cache-control", b"no-store"),
     (b"x-content-type-options", b"nosniff"),
@@ -244,7 +246,15 @@ def build_services(settings: Settings, extractor: Any | None = None,
         )
     if storage is None:
         if settings.storage_backend == "r2":
-            storage = R2Storage()
+            storage = R2Storage.from_settings(
+                account_id=settings.r2_account_id or "",
+                access_key_id=settings.r2_access_key_id or "",
+                secret_access_key=settings.r2_secret_access_key.get_secret_value()
+                if settings.r2_secret_access_key else "",
+                bucket=settings.r2_bucket or "",
+                endpoint_url=settings.r2_endpoint_url,
+                proxy_url=settings.egress_proxy_url,
+            )
         else:
             storage = LocalStorage(settings.storage_dir, settings.signing_key(),
                                    settings.public_base_url)

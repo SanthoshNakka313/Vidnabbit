@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "VidNabbit API: extract and download public media with yt-dlp"
 requires-python = ">=3.12.4,<3.13"
 dependencies = [
+    "boto3==1.43.118",
     "fastapi==0.161.1",
     "httpx==0.28.1",
     "idna==3.20",
@@ -24,6 +25,7 @@ queue = [
 dev = [
     # Static ffmpeg binary for local dev/tests (the Docker image uses apt ffmpeg).
     "imageio-ffmpeg==0.6.0",
+    "moto[s3]==5.2.4",
     "pytest==9.1.1",
     "ruff==0.17.2",
 ]

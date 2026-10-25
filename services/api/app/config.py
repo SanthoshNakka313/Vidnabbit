@@ -66,6 +66,11 @@ class Settings(BaseSettings):
 
     # Storage / dirs
     storage_backend: Literal["local", "r2"] = "local"
+    r2_account_id: str | None = None
+    r2_access_key_id: str | None = None
+    r2_secret_access_key: SecretStr | None = None
+    r2_bucket: str | None = None
+    r2_endpoint_url: str | None = None  # override (tests, S3-compatible dev servers)
     data_dir: Path = Path(".data")
     blocklist_file: Path | None = None  # default data_dir/blocklist.json
     takedown_file: Path | None = None  # default data_dir/takedowns.jsonl
@@ -180,6 +185,13 @@ class Settings(BaseSettings):
                 problems.append("STORAGE_BACKEND=local is for development only")
             if problems:
                 raise ValueError("Invalid production configuration: " + "; ".join(problems))
+        if self.storage_backend == "r2":
+            needed = ["r2_bucket", "r2_access_key_id", "r2_secret_access_key"]
+            if not self.r2_endpoint_url:
+                needed.append("r2_account_id")
+            missing = [n.upper() for n in needed if not getattr(self, n)]
+            if missing:
+                raise ValueError("STORAGE_BACKEND=r2 needs " + ", ".join(missing))
         key = self.signing_secret.get_secret_value() if self.signing_secret else None
         seed = self.ip_hash_key_seed.get_secret_value() if self.ip_hash_key_seed else None
         self._signing_key = (key or secrets.token_urlsafe(32)).encode()
