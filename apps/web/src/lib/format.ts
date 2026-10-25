@@ -117,3 +117,11 @@ export function downloadLabel(f: MediaFormat): string {
   const size = formatBytes(f.filesize_bytes) ? ` · ${formatSize(f)}` : "";
   return `Download ${f.label}${size}`;
 }
+
+/** BRAND.md: yellow "HD" / "4K" badges on video formats. */
+export function qualityBadge(f: MediaFormat): "4K" | "HD" | null {
+  if (f.kind !== "video" || !f.height) return null;
+  if (f.height >= 2160) return "4K";
+  if (f.height >= 720) return "HD";
+  return null;
+}

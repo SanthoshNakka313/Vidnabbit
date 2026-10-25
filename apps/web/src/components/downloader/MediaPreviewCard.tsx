@@ -26,7 +26,7 @@ export function safeThumbnailUrl(raw: string | null): string | null {
 function Placeholder({ mediaType }: { mediaType: ExtractResponse["media_type"] }) {
   const Icon = mediaType === "audio" ? IconMusic : mediaType === "video" ? IconFilm : IconImage;
   return (
-    <div className="flex h-full w-full items-center justify-center bg-surface-2 text-muted">
+    <div className="flex h-full w-full items-center justify-center bg-brand-gradient text-white/90">
       <Icon size={40} />
     </div>
   );
@@ -34,7 +34,7 @@ function Placeholder({ mediaType }: { mediaType: ExtractResponse["media_type"] }
 
 export function SiteBadge({ site }: { site: string | null | undefined }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-sm bg-surface-2 px-2 py-0.5 text-xs font-medium text-muted">
+    <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-bold text-muted">
       <IconGlobe size={14} />
       {site?.trim() || "Website"}
     </span>
@@ -54,8 +54,8 @@ export function MediaPreviewCard({ data, titleRef }: MediaPreviewCardProps) {
   const showImage = !!thumbnail && !imgFailed;
 
   return (
-    <div className="flex flex-col gap-4 md:flex-row">
-      <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-md bg-surface-2 md:w-64">
+    <div className="flex flex-col gap-5 md:flex-row md:items-center">
+      <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-lg bg-surface-2 shadow-md md:w-72">
         {showImage ? (
           // eslint-disable-next-line @next/next/no-img-element -- remote, arbitrary hosts; must not be proxied through next/image
           <img
@@ -73,7 +73,7 @@ export function MediaPreviewCard({ data, titleRef }: MediaPreviewCardProps) {
           <Placeholder mediaType={data.media_type} />
         )}
         {duration && (
-          <span className="tabular absolute bottom-2 right-2 rounded-sm bg-black/80 px-1.5 py-0.5 text-xs font-medium text-white">
+          <span className="tabular absolute bottom-2 right-2 rounded-full bg-ink/85 px-2 py-0.5 text-xs font-bold text-white">
             <span aria-hidden="true">{duration}</span>
             <span className="sr-only">Duration {durationLong}</span>
           </span>
@@ -85,11 +85,11 @@ export function MediaPreviewCard({ data, titleRef }: MediaPreviewCardProps) {
           tabIndex={-1}
           title={data.title}
           data-testid="result-title"
-          className="line-clamp-2 break-words text-lg font-semibold"
+          className="line-clamp-2 break-words text-xl sm:text-2xl"
         >
           {data.title || "Untitled"}
         </h2>
-        <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
+        <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
           {data.uploader && <span className="break-words">{data.uploader}</span>}
           {data.uploader && <span aria-hidden="true">·</span>}
           <SiteBadge site={data.source.site} />

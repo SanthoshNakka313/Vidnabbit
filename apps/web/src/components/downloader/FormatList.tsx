@@ -9,9 +9,11 @@ import {
   groupFormats,
   isPrimaryFormat,
   isTooLarge,
+  qualityBadge,
   recommendedFormatIds,
 } from "@/lib/format";
 import { IconCheck } from "../icons";
+import { badgeSun } from "../ui/styles";
 
 interface FormatListProps {
   formats: MediaFormat[];
@@ -37,14 +39,15 @@ function FormatRow({
 }) {
   const tooLarge = isTooLarge(format);
   const details = formatDetails(format);
+  const quality = qualityBadge(format);
   const rowDisabled = disabled || tooLarge;
   return (
     <li>
       <label
-        className={`flex min-h-[3.25rem] items-center gap-3 rounded-md border px-3 py-2 transition-colors duration-150 ${
+        className={`flex min-h-14 items-center gap-3 rounded-md border-2 px-4 py-2.5 transition-[border-color,background-color,box-shadow] duration-150 ${
           checked
-            ? "border-accent bg-accent-subtle text-accent-strong"
-            : "border-border hover:bg-surface-2"
+            ? "border-accent-strong bg-accent-subtle shadow-sm"
+            : "border-border bg-surface hover:border-accent-strong/40"
         } ${rowDisabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"} has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus`}
       >
         <input
@@ -54,28 +57,29 @@ function FormatRow({
           checked={checked}
           disabled={rowDisabled}
           onChange={() => onSelect(format.format_id)}
-          className="size-5 shrink-0 accent-accent focus-visible:outline-none"
+          className="size-5 shrink-0 accent-violet focus-visible:outline-none"
         />
         <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
-          <span className="font-medium">{format.label}</span>
+          <span className={`font-bold ${checked ? "text-accent-strong" : ""}`}>{format.label}</span>
+          {quality && <span className={badgeSun}>{quality}</span>}
           {details.map((d) => (
             <span key={d} className="tabular text-sm text-muted">
               {d}
             </span>
           ))}
           {recommended && (
-            <span className="inline-flex items-center gap-1 rounded-sm bg-accent-subtle px-2 py-0.5 text-xs font-semibold text-accent-strong ring-1 ring-accent/40">
+            <span className="inline-flex items-center gap-1 rounded-full bg-violet px-2.5 py-0.5 text-xs font-bold text-white">
               <IconCheck size={12} strokeWidth={2.5} />
               Recommended
             </span>
           )}
           {format.kind === "video" && !format.has_audio && (
-            <span className="rounded-sm bg-surface-2 px-2 py-0.5 text-xs font-medium text-muted">
+            <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-bold text-muted">
               No audio
             </span>
           )}
         </span>
-        <span className="tabular shrink-0 text-sm text-muted">
+        <span className="tabular shrink-0 text-sm font-bold text-muted">
           {tooLarge ? "Over 4 GB" : formatSize(format)}
         </span>
       </label>
@@ -97,7 +101,7 @@ export function FormatList({ formats, selectedId, onSelect, disabled }: FormatLi
 
   if (!formats.length) {
     return (
-      <p className="rounded-md bg-surface-2 p-4 text-muted">
+      <p className="rounded-lg bg-surface-2 p-5 text-muted">
         We found the page but no downloadable media. Try the direct link to the video or post.
       </p>
     );
@@ -107,10 +111,10 @@ export function FormatList({ formats, selectedId, onSelect, disabled }: FormatLi
     <div className="flex flex-col gap-5" id={listId}>
       {groups.map((group) => (
         <fieldset key={group.kind} disabled={disabled} className="min-w-0">
-          <legend className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">
+          <legend className="mb-3 text-sm font-black uppercase tracking-widest text-muted">
             {KIND_LABELS[group.kind]}
           </legend>
-          <ul className="flex flex-col gap-2">
+          <ul className="grid gap-2.5 sm:grid-cols-2">
             {group.formats.map((f) => (
               <FormatRow
                 key={f.format_id}
@@ -131,7 +135,7 @@ export function FormatList({ formats, selectedId, onSelect, disabled }: FormatLi
           aria-expanded={showAll}
           aria-controls={listId}
           onClick={() => setShowAll((s) => !s)}
-          className="inline-flex min-h-tap items-center self-start rounded-md px-2 font-medium text-accent underline-offset-2 hover:underline"
+          className="inline-flex min-h-tap items-center self-start rounded-full px-3 font-bold text-link underline-offset-4 hover:underline"
         >
           {showAll ? "Show fewer" : `Show all ${formats.length} formats`}
         </button>

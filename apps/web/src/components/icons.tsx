@@ -120,3 +120,36 @@ export const IconSpinner = ({ className = "", ...p }: IconProps) => (
     <path d="M21 12a9 9 0 1 1-6.22-8.56" />
   </Icon>
 );
+
+export const IconShield = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6l-8-3Z" />
+    <path d="m9 12 2 2 4-4" />
+  </Icon>
+);
+
+export const IconClock = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </Icon>
+);
+
+export const IconLock = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="5" y="11" width="14" height="10" rx="2" />
+    <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+  </Icon>
+);
+
+export const IconSparkle = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6" />
+  </Icon>
+);
+
+export const IconZap = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M13 3 5 13h6l-1 8 8-10h-6l1-8Z" />
+  </Icon>
+);

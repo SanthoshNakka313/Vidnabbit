@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/site";
 import { DraftBanner, PageShell } from "@/components/PageShell";
 
-export const metadata: Metadata = { title: "Privacy" };
+export const metadata: Metadata = pageMetadata({
+  title: "Privacy",
+  description:
+    "VidNabbit privacy in plain English: no accounts, no ads, no tracking scripts, no passwords or cookies, and files deleted within 1 hour.",
+  path: "/privacy",
+});
 
 export default function PrivacyPage() {
   return (

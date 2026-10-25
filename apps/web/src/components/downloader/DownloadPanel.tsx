@@ -71,8 +71,8 @@ function DoneView({
 
   if (expired) {
     return (
-      <div className="rounded-lg border border-warning bg-warning-subtle p-4 text-warning sm:p-5">
-        <h2 className="text-lg font-semibold">This file has been deleted.</h2>
+      <div className="rounded-lg border-2 border-sun bg-warning-subtle p-5 text-warning sm:p-6">
+        <h2 className="text-lg">This file has been deleted.</h2>
         <p className="mt-1 text-text">Start the download again.</p>
         <button type="button" onClick={onAgain} className={`${buttonPrimary} mt-4`}>
           Download again
@@ -82,10 +82,10 @@ function DoneView({
   }
 
   return (
-    <div className="rounded-lg border border-success bg-success-subtle p-4 sm:p-5" data-testid="job-done">
-      <h2 className="flex items-center gap-2 text-lg font-semibold text-success">
-        <IconCheckCircle />
-        Your file is ready
+    <div className="rounded-lg border-2 border-[#10b981] bg-success-subtle p-5 sm:p-6" data-testid="job-done">
+      <h2 className="flex items-center gap-2 text-xl text-success">
+        <IconCheckCircle size={24} />
+        Nabbed! Your file is ready
       </h2>
       <p className="mt-1 break-all font-mono text-sm text-text">
         {job.filename ?? "download"}
@@ -141,7 +141,7 @@ export function DownloadPanel({
   switch (state.phase) {
     case "idle":
       return (
-        <div className="sticky bottom-0 z-10 -mx-4 flex flex-col gap-3 border-t border-border bg-bg/95 px-4 py-3 shadow-md backdrop-blur md:static md:mx-0 md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none">
+        <div className="sticky bottom-0 z-10 -mx-5 flex flex-col gap-3 border-t border-border bg-surface/95 px-5 py-3 shadow-md backdrop-blur md:static md:mx-0 md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none">
           <CopyrightNotice />
           <button
             type="button"
@@ -169,14 +169,14 @@ export function DownloadPanel({
       const running = job?.status === "running" && job.progress > 0;
       const text = state.phase === "starting" ? "Starting…" : stageText(job, data, format);
       return (
-        <div className="flex flex-col gap-3" data-testid="job-progress">
+        <div className="flex flex-col gap-3 rounded-lg bg-surface-2/60 p-5" data-testid="job-progress">
           <div className="flex items-baseline justify-between gap-4">
-            <p id={stageId} className="flex items-center gap-2 font-medium">
+            <p id={stageId} className="flex items-center gap-2 font-bold">
               {!running && <IconSpinner size={18} />}
               {text.replace(/ \d+%$/, "")}
             </p>
             {running && (
-              <span className="tabular font-medium" aria-hidden="true">
+              <span className="tabular text-lg font-black text-accent-strong" aria-hidden="true">
                 {Math.round(job.progress * 100)}%
               </span>
             )}

@@ -36,5 +36,5 @@ export { expect };
 
 export async function submitUrl(page: Page, url: string) {
   await page.getByLabel("Paste a link").fill(url);
-  await page.getByRole("button", { name: "Get media" }).click();
+  await page.getByRole("button", { name: "Nab it" }).click();
 }

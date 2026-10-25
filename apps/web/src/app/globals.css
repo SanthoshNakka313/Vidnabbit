@@ -1,134 +1,130 @@
 @import "tailwindcss";
 
 /*
- * Design tokens copied from docs/design-tokens.css (source of truth:
- * docs/04-design.md). Only change: font tokens point at the self-hosted
- * next/font variables first. Re-copy when the design file changes.
- */
-/*
- * VidNabbit design tokens (v1). Source of truth: docs/04-design.md, section 4.
- * Copy into apps/web/app/globals.css after `@import "tailwindcss";`.
+ * VidNabbit brand tokens. Source of truth: BRAND.md (colours, Nunito, radii,
+ * gradient). Token names are unchanged from docs/design-tokens.css, so every
+ * component picks up the brand through them.
  *
- * Brand colours are PLACEHOLDERS (neutral slate + indigo accent) until the
- * owner supplies a brand. Contrast ratios are listed next to each text pair
- * (WCAG 2.x relative luminance; AA = 4.5:1 text, 3:1 UI/large text).
+ * Accessibility (WCAG 2.x AA): Nabbit Rose #F43F5E is 3.7:1 with white, so it
+ * is used for fills, underlines and large bold labels (>= 18px bold, 3:1),
+ * never for small text. Small link text is ink or violet. Error and success
+ * TEXT use slightly deeper shades of the brand red/green (#DC2626, #047857)
+ * to reach 4.5:1; the brand hexes stay on borders, icons and fills.
  */
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
+
+  /* ---------- Brand palette (BRAND.md) ---------- */
+  --vn-rose: #f43f5e;
+  --vn-coral: #ff4d6d;
+  --vn-violet: #7c3aed;
+  --vn-sun: #ffd166;
+  --vn-blush: #ffb3c1;
+  --vn-ink: #1e1b2e;
+  --vn-gradient: linear-gradient(135deg, var(--vn-coral), var(--vn-violet));
 
   /* ---------- Colour: light (default) ---------- */
-  --vn-bg: #ffffff;               /* page background */
-  --vn-surface: #f8fafc;          /* cards, result panel */
-  --vn-surface-2: #f1f5f9;        /* format row hover, skeleton base, code */
-  --vn-text: #0f172a;             /* 17.85:1 on bg, 17.08 on surface, 16.31 on surface-2 */
-  --vn-text-muted: #475569;       /* 7.58:1 on bg, 7.24 on surface, 6.92 on surface-2 */
-  --vn-border: #e2e8f0;           /* decorative dividers only (not a control boundary) */
-  --vn-border-strong: #64748b;    /* input/select outlines: 4.76:1 on bg (>= 3:1 non-text) */
+  --vn-bg: #faf8fc;               /* surface: page background */
+  --vn-surface: #ffffff;          /* cards */
+  --vn-surface-2: #f3f0f8;        /* hover rows, skeletons, code */
+  --vn-text: #1e1b2e;             /* ink: 16.2:1 on bg */
+  --vn-text-muted: #6b6880;       /* muted: 5.1:1 on bg, 5.5 on white */
+  --vn-border: #ece8f2;           /* decorative dividers */
+  --vn-border-strong: #8b87a0;    /* input outlines: 3.4:1 on white (>= 3:1 non-text) */
 
-  --vn-accent: #4f46e5;           /* primary button bg, links: 6.29:1 on bg */
-  --vn-accent-hover: #4338ca;     /* 7.90:1 with white text */
-  --vn-on-accent: #ffffff;        /* text on accent: 6.29:1 */
-  --vn-accent-subtle: #eef2ff;    /* recommended preset / selected row bg */
-  --vn-accent-strong: #4338ca;    /* text on accent-subtle: 7.07:1 */
-  --vn-focus: #4f46e5;            /* focus ring: 6.29:1 on bg */
+  --vn-accent: #f43f5e;           /* Nabbit Rose: fills, CTA, underlines */
+  --vn-accent-hover: #ff4d6d;     /* coral */
+  --vn-on-accent: #ffffff;
+  --vn-accent-subtle: #f5effe;    /* violet 6% tint: selected format chip bg */
+  --vn-accent-strong: #7c3aed;    /* violet: selected chips, small accent text (5.3:1 on tint) */
+  --vn-link: #6d28d9;             /* small link/ghost text: 6.9:1 on bg */
+  --vn-focus: #7c3aed;
 
-  --vn-danger: #b91c1c;           /* 6.47:1 on bg */
-  --vn-danger-subtle: #fef2f2;    /* danger text on it: 5.91:1 */
-  --vn-warning: #92400e;          /* text on warning-subtle: 6.84:1 */
-  --vn-warning-subtle: #fffbeb;
-  --vn-success: #15803d;          /* 5.01:1 on bg */
-  --vn-success-subtle: #f0fdf4;   /* success text on it: 4.79:1 */
+  --vn-danger: #dc2626;           /* text 4.6:1; brand #ef4444 on borders/icons */
+  --vn-danger-subtle: #fef1f1;
+  --vn-warning: #92400e;
+  --vn-warning-subtle: #fff8e6;   /* sun tint */
+  --vn-success: #047857;          /* text 5.2:1; brand #10b981 on fills */
+  --vn-success-subtle: #ecfdf5;
 
-  /* ---------- Typography ---------- */
-  --vn-font-sans: var(--font-geist-sans), "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --vn-font-mono: var(--font-geist-mono), "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* ---------- Typography (BRAND.md: Nunito 400/700/900) ---------- */
+  --vn-font-sans: var(--font-nunito), "Nunito", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --vn-font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* size / line-height pairs (rem, 1rem = 16px) */
-  --vn-text-xs: 0.75rem;   --vn-leading-xs: 1rem;       /* 12/16 badges, meta only */
-  --vn-text-sm: 0.875rem;  --vn-leading-sm: 1.25rem;    /* 14/20 secondary text, notice */
-  --vn-text-base: 1rem;    --vn-leading-base: 1.5rem;   /* 16/24 body, inputs (>=16px stops iOS zoom) */
-  --vn-text-lg: 1.125rem;  --vn-leading-lg: 1.75rem;    /* 18/28 card title */
-  --vn-text-xl: 1.25rem;   --vn-leading-xl: 1.75rem;    /* 20/28 section heading */
-  --vn-text-2xl: 1.5rem;   --vn-leading-2xl: 2rem;      /* 24/32 page heading (mobile h1) */
-  --vn-text-3xl: 2rem;     --vn-leading-3xl: 2.5rem;    /* 32/40 hero mobile */
-  --vn-text-4xl: 2.75rem;  --vn-leading-4xl: 3.25rem;   /* 44/52 hero desktop */
+  --vn-text-xs: 0.75rem;   --vn-leading-xs: 1rem;
+  --vn-text-sm: 0.875rem;  --vn-leading-sm: 1.375rem;
+  --vn-text-base: 1rem;    --vn-leading-base: 1.6;      /* BRAND.md: 16px / 1.6 */
+  --vn-text-lg: 1.125rem;  --vn-leading-lg: 1.75rem;
+  --vn-text-xl: 1.25rem;   --vn-leading-xl: 1.75rem;
+  --vn-text-2xl: 1.625rem; --vn-leading-2xl: 2.125rem;
+  --vn-text-3xl: 2.25rem;  --vn-leading-3xl: 2.625rem;
+  --vn-text-4xl: 3.5rem;   --vn-leading-4xl: 3.75rem;
 
   --vn-weight-regular: 400;
-  --vn-weight-medium: 500;
-  --vn-weight-semibold: 600;
-  --vn-weight-bold: 700;
+  --vn-weight-medium: 700;
+  --vn-weight-semibold: 700;
+  --vn-weight-bold: 900;
 
-  /* ---------- Spacing (4px base) ---------- */
-  --vn-space-0: 0;
-  --vn-space-1: 0.25rem;  /* 4  */
-  --vn-space-2: 0.5rem;   /* 8  */
-  --vn-space-3: 0.75rem;  /* 12 */
-  --vn-space-4: 1rem;     /* 16 */
-  --vn-space-5: 1.25rem;  /* 20 */
-  --vn-space-6: 1.5rem;   /* 24 */
-  --vn-space-8: 2rem;     /* 32 */
-  --vn-space-10: 2.5rem;  /* 40 */
-  --vn-space-12: 3rem;    /* 48 */
-  --vn-space-16: 4rem;    /* 64 */
-  --vn-space-24: 6rem;    /* 96 */
+  /* ---------- Sizing ---------- */
+  --vn-tap-min: 2.75rem;
+  --vn-control-h: 3rem;
+  --vn-control-h-lg: 3.75rem;   /* hero paste input + "Nab it" */
+  --vn-content-max: 47rem;
+  --vn-page-max: 75rem;
 
-  --vn-tap-min: 2.75rem;        /* 44px minimum touch target */
-  --vn-control-h: 3rem;         /* 48px buttons and inputs */
-  --vn-control-h-lg: 3.5rem;    /* 56px hero URL input + primary CTA */
-  --vn-content-max: 45rem;      /* 720px main column */
-  --vn-page-max: 72rem;         /* 1152px header/footer */
+  /* ---------- Radius (BRAND.md: cards 16, buttons/inputs 12, pills full) ---------- */
+  --vn-radius-sm: 0.5rem;
+  --vn-radius-md: 0.75rem;
+  --vn-radius-lg: 1rem;
+  --vn-radius-xl: 1.5rem;
+  --vn-radius-full: 9999px;
 
-  /* ---------- Radius ---------- */
-  --vn-radius-sm: 0.375rem;  /* 6  badges */
-  --vn-radius-md: 0.625rem;  /* 10 buttons, inputs, rows */
-  --vn-radius-lg: 1rem;      /* 16 cards */
-  --vn-radius-full: 9999px;  /* chips, progress bar */
+  /* ---------- Soft shadows, tinted with ink/violet ---------- */
+  --vn-shadow-sm: 0 1px 2px rgb(30 27 46 / 0.06);
+  --vn-shadow-md: 0 2px 6px rgb(30 27 46 / 0.05), 0 8px 24px rgb(30 27 46 / 0.07);
+  --vn-shadow-lg: 0 12px 40px rgb(124 58 237 / 0.14), 0 2px 8px rgb(30 27 46 / 0.06);
+  --vn-shadow-cta: 0 8px 24px rgb(244 63 94 / 0.35);
 
-  /* ---------- Shadows (light) ---------- */
-  --vn-shadow-sm: 0 1px 2px rgb(15 23 42 / 0.06);
-  --vn-shadow-md: 0 2px 4px rgb(15 23 42 / 0.06), 0 4px 12px rgb(15 23 42 / 0.08);
-  --vn-shadow-lg: 0 8px 24px rgb(15 23 42 / 0.12);
-  --vn-ring: 0 0 0 2px var(--vn-bg), 0 0 0 4px var(--vn-focus); /* focus ring with offset */
-
-  /* ---------- Motion ---------- */
   --vn-duration-fast: 120ms;
   --vn-duration-base: 200ms;
   --vn-ease: cubic-bezier(0.2, 0, 0, 1);
 }
 
-/* ---------- Colour: dark ---------- */
+/* ---------- Colour: dark (BRAND.md: bg #14121F, cards #1E1B2E, primary #FB7185) ---------- */
 @media (prefers-color-scheme: dark) {
   :root {
-    --vn-bg: #0b1120;
-    --vn-surface: #0f172a;
-    --vn-surface-2: #1e293b;
-    --vn-text: #f1f5f9;           /* 17.29:1 on bg, 16.31 on surface, 13.35 on surface-2 */
-    --vn-text-muted: #94a3b8;     /* 7.39:1 on bg, 6.97 on surface, 5.71 on surface-2 */
-    --vn-border: #334155;         /* decorative */
-    --vn-border-strong: #64748b;  /* 3.98:1 on bg, 3.75 on surface */
+    color-scheme: dark;
+    --vn-bg: #14121f;
+    --vn-surface: #1e1b2e;
+    --vn-surface-2: #2a2640;
+    --vn-text: #ffffff;
+    --vn-text-muted: #b3afc8;     /* 8.6:1 on bg */
+    --vn-border: #2e2a44;
+    --vn-border-strong: #6f6a8a;
 
-    --vn-accent: #818cf8;         /* links/buttons: 6.35:1 on bg, 5.99 on surface */
-    --vn-accent-hover: #a5b4fc;   /* 9.50:1 with on-accent text */
-    --vn-on-accent: #0b1120;      /* dark text on light accent: 6.35:1 */
-    --vn-accent-subtle: #1e1b4b;
-    --vn-accent-strong: #a5b4fc;  /* on accent-subtle: 8.02:1 */
-    --vn-focus: #a5b4fc;          /* 9.50:1 on bg */
+    --vn-accent: #fb7185;
+    --vn-accent-hover: #ff8fa0;
+    --vn-on-accent: #ffffff;
+    --vn-accent-subtle: #2b2050;
+    --vn-accent-strong: #c4b5fd;
+    --vn-link: #fda4b4;           /* rose tint: 9.8:1 on bg */
+    --vn-focus: #c4b5fd;
 
-    --vn-danger: #f87171;         /* 6.85:1 on bg */
-    --vn-danger-subtle: #450a0a;  /* danger text on it: 5.83:1 */
-    --vn-warning: #fbbf24;        /* on warning-subtle: 8.97:1 */
-    --vn-warning-subtle: #451a03;
-    --vn-success: #4ade80;        /* 10.87:1 on bg */
-    --vn-success-subtle: #052e16; /* success text on it: 8.55:1 */
+    --vn-danger: #f87171;
+    --vn-danger-subtle: #3a1620;
+    --vn-warning: #ffd166;
+    --vn-warning-subtle: #33280f;
+    --vn-success: #34d399;
+    --vn-success-subtle: #0f2b24;
 
     --vn-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
-    --vn-shadow-md: 0 2px 4px rgb(0 0 0 / 0.4), 0 4px 12px rgb(0 0 0 / 0.4);
-    --vn-shadow-lg: 0 8px 24px rgb(0 0 0 / 0.5);
+    --vn-shadow-md: 0 4px 16px rgb(0 0 0 / 0.35);
+    --vn-shadow-lg: 0 16px 48px rgb(0 0 0 / 0.45);
+    --vn-shadow-cta: 0 8px 28px rgb(251 113 133 / 0.3);
   }
 }
 
-/* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   :root {
     --vn-duration-fast: 0ms;
@@ -142,11 +138,7 @@
   }
 }
 
-/* ---------- Tailwind v4 mapping ----------
- * Utilities: bg-bg, bg-surface, text-text, text-muted, border-border,
- * border-strong, bg-accent, text-on-accent, ring-focus, text-danger, etc.
- * `inline` makes utilities reference the variables, so dark mode just works.
- */
+/* ---------- Tailwind v4 mapping ---------- */
 @theme inline {
   --color-bg: var(--vn-bg);
   --color-surface: var(--vn-surface);
@@ -160,6 +152,7 @@
   --color-on-accent: var(--vn-on-accent);
   --color-accent-subtle: var(--vn-accent-subtle);
   --color-accent-strong: var(--vn-accent-strong);
+  --color-link: var(--vn-link);
   --color-focus: var(--vn-focus);
   --color-danger: var(--vn-danger);
   --color-danger-subtle: var(--vn-danger-subtle);
@@ -167,6 +160,13 @@
   --color-warning-subtle: var(--vn-warning-subtle);
   --color-success: var(--vn-success);
   --color-success-subtle: var(--vn-success-subtle);
+
+  --color-rose: var(--vn-rose);
+  --color-coral: var(--vn-coral);
+  --color-violet: var(--vn-violet);
+  --color-sun: var(--vn-sun);
+  --color-blush: var(--vn-blush);
+  --color-ink: var(--vn-ink);
 
   --font-sans: var(--vn-font-sans);
   --font-mono: var(--vn-font-mono);
@@ -183,13 +183,14 @@
   --radius-sm: var(--vn-radius-sm);
   --radius-md: var(--vn-radius-md);
   --radius-lg: var(--vn-radius-lg);
+  --radius-xl: var(--vn-radius-xl);
   --radius-full: var(--vn-radius-full);
 
   --shadow-sm: var(--vn-shadow-sm);
   --shadow-md: var(--vn-shadow-md);
   --shadow-lg: var(--vn-shadow-lg);
+  --shadow-cta: var(--vn-shadow-cta);
 
-  /* Tailwind's default 0.25rem spacing scale already matches --vn-space-*. */
   --spacing-tap: var(--vn-tap-min);
   --spacing-control: var(--vn-control-h);
   --spacing-control-lg: var(--vn-control-h-lg);
@@ -205,24 +206,22 @@ html {
   color: var(--vn-text);
   font-family: var(--vn-font-sans);
   -webkit-text-size-adjust: 100%;
+  /* Keep focused rows clear of the sticky mobile action bar (WCAG 2.4.11). */
+  scroll-padding-bottom: 6rem;
 }
-:focus-visible {
-  outline: 2px solid var(--vn-focus);
-  outline-offset: 2px;
-}
-.tabular { font-variant-numeric: tabular-nums; } /* sizes, durations, progress % */
-
-
-/* ---------- App base (not part of the token file) ---------- */
 body {
   background: var(--vn-bg);
   color: var(--vn-text);
   min-height: 100dvh;
+  line-height: var(--vn-leading-base);
 }
-html {
-  /* Keep focused rows clear of the sticky mobile action bar (WCAG 2.4.11). */
-  scroll-padding-bottom: 6rem;
+/* BRAND.md: headings Nunito 900, letter-spacing -0.5px. */
+h1, h2, h3 { font-weight: 900; letter-spacing: -0.5px; }
+:focus-visible {
+  outline: 2px solid var(--vn-focus);
+  outline-offset: 2px;
 }
+.tabular { font-variant-numeric: tabular-nums; }
 @media (prefers-reduced-motion: no-preference) {
   html { scroll-behavior: smooth; }
 }
@@ -239,32 +238,83 @@ html {
   border: 0;
 }
 
-/* Prose for legal and info pages. */
+/* ---------- Brand utilities ---------- */
+.bg-brand-gradient { background-image: var(--vn-gradient); }
+.text-brand-gradient {
+  background-image: var(--vn-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+/* Hero backdrop: soft brand glows on the page colour (decorative only). */
+.vn-hero-glow {
+  background:
+    radial-gradient(60rem 28rem at 15% -10%, rgb(255 77 109 / 0.16), transparent 60%),
+    radial-gradient(50rem 26rem at 95% 0%, rgb(124 58 237 / 0.16), transparent 60%),
+    var(--vn-bg);
+}
+@media (prefers-color-scheme: dark) {
+  .vn-hero-glow {
+    background:
+      radial-gradient(60rem 28rem at 15% -10%, rgb(255 77 109 / 0.22), transparent 60%),
+      radial-gradient(50rem 26rem at 95% 0%, rgb(124 58 237 / 0.28), transparent 60%),
+      var(--vn-bg);
+  }
+}
+/* Gradient ring around the hero paste card. */
+.vn-gradient-ring {
+  border: 2px solid transparent;
+  background:
+    linear-gradient(var(--vn-surface), var(--vn-surface)) padding-box,
+    var(--vn-gradient) border-box;
+}
+
+/* Logo swap: light logo by default, dark-background logo in dark mode. */
+.vn-logo-dark { display: none; }
+@media (prefers-color-scheme: dark) {
+  .vn-logo-light { display: none; }
+  .vn-logo-dark { display: block; }
+}
+
+/* Gentle hop for the mark in loading states; off under reduced motion. */
+@keyframes vn-hop {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-6px); }
+}
+.vn-hop { animation: vn-hop 0.9s var(--vn-ease) infinite; }
+
+/* ---------- Prose for legal and info pages ---------- */
 .prose-vn { max-width: var(--vn-content-max); }
-.prose-vn h1 { font-size: var(--vn-text-2xl); line-height: var(--vn-leading-2xl); font-weight: 700; margin-bottom: 1rem; }
-.prose-vn h2 { font-size: var(--vn-text-xl); line-height: var(--vn-leading-xl); font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; }
-.prose-vn h3 { font-size: var(--vn-text-lg); line-height: var(--vn-leading-lg); font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+.prose-vn h1 { font-size: var(--vn-text-2xl); line-height: var(--vn-leading-2xl); margin-bottom: 1rem; }
+.prose-vn h2 { font-size: var(--vn-text-xl); line-height: var(--vn-leading-xl); margin-top: 2.25rem; margin-bottom: 0.75rem; }
+.prose-vn h3 { font-size: var(--vn-text-lg); line-height: var(--vn-leading-lg); margin-top: 1.5rem; margin-bottom: 0.5rem; }
 .prose-vn p, .prose-vn ul, .prose-vn ol { margin-bottom: 1rem; }
 .prose-vn ul { list-style: disc; padding-left: 1.5rem; }
 .prose-vn ol { list-style: decimal; padding-left: 1.5rem; }
 .prose-vn li { margin-bottom: 0.25rem; }
-.prose-vn a { color: var(--vn-accent); text-decoration: underline; text-underline-offset: 2px; }
-.prose-vn a:hover { color: var(--vn-accent-hover); }
+.prose-vn li::marker { color: var(--vn-accent); }
+.prose-vn strong { font-weight: 700; }
+.prose-vn a {
+  color: var(--vn-link);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: var(--vn-accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+.prose-vn a:hover { color: var(--vn-text); }
+.prose-vn code { font-family: var(--vn-font-mono); font-size: 0.9em; background: var(--vn-surface-2); border-radius: 0.375rem; padding: 0.1em 0.35em; }
 @media (min-width: 640px) {
   .prose-vn h1 { font-size: var(--vn-text-3xl); line-height: var(--vn-leading-3xl); }
 }
 
-/* Indeterminate progress stripe; static under reduced motion (tokens file). */
-@keyframes vn-stripe {
-  from { background-position: 0 0; }
-  to { background-position: 2rem 0; }
+/* Indeterminate progress: brand gradient sweeping; static under reduced motion. */
+@keyframes vn-sweep {
+  from { background-position: 0% 0; }
+  to { background-position: 200% 0; }
 }
 .vn-progress-indeterminate {
-  background-image: repeating-linear-gradient(
-    -45deg,
-    var(--vn-accent) 0 0.5rem,
-    var(--vn-accent-hover) 0.5rem 1rem
-  );
-  background-size: 2rem 100%;
-  animation: vn-stripe 1s linear infinite;
+  background-image: linear-gradient(90deg, var(--vn-coral), var(--vn-violet), var(--vn-coral));
+  background-size: 200% 100%;
+  animation: vn-sweep 1.4s linear infinite;
 }

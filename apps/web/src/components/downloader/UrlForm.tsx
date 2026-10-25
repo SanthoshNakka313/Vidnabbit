@@ -86,8 +86,14 @@ export function UrlForm({
   const describedBy = [error ? errorId : null, helpId].filter(Boolean).join(" ");
 
   return (
-    <form role="search" aria-label="Get media from a link" onSubmit={handleSubmit} noValidate>
-      <label htmlFor={inputId} className="mb-2 block font-medium">
+    <form
+      role="search"
+      aria-label="Get media from a link"
+      onSubmit={handleSubmit}
+      noValidate
+      className="vn-gradient-ring rounded-xl p-3 shadow-lg sm:p-4"
+    >
+      <label htmlFor={inputId} className="mb-2 block px-1 text-left font-bold">
         Paste a link
       </label>
       <div className="flex flex-col gap-3 sm:flex-row">
@@ -103,7 +109,7 @@ export function UrlForm({
             autoCorrect="off"
             spellCheck={false}
             enterKeyHint="go"
-            placeholder="https://…"
+            placeholder="https://your-video-link…"
             value={value}
             onChange={(e) => {
               onValueChange(e.target.value);
@@ -111,7 +117,7 @@ export function UrlForm({
             }}
             aria-invalid={error ? true : undefined}
             aria-describedby={describedBy}
-            className={`${inputBase} h-control-lg ${value ? "pr-12" : ""}`}
+            className={`${inputBase} h-control-lg text-lg ${value ? "pr-12" : ""}`}
           />
           {value && (
             <button
@@ -139,30 +145,30 @@ export function UrlForm({
           <button
             type="submit"
             disabled={loading}
-            className={`${buttonPrimary} h-control-lg flex-1 whitespace-nowrap sm:flex-none`}
+            className={`${buttonPrimary} h-control-lg flex-1 whitespace-nowrap px-7 sm:flex-none`}
           >
             {loading ? (
               <>
                 <IconSpinner />
-                Getting media…
+                Nabbing…
               </>
             ) : (
-              "Get media"
+              "Nab it"
             )}
           </button>
         </div>
       </div>
       {error && (
-        <p id={errorId} className="mt-2 flex items-start gap-2 text-sm text-danger">
+        <p id={errorId} className="mt-3 flex items-start gap-2 px-1 text-left text-sm font-bold text-danger">
           <IconAlert size={18} className="mt-0.5 shrink-0" />
           <span>{error}</span>
         </p>
       )}
-      <p id={helpId} className="mt-2 text-sm text-muted">
+      <p id={helpId} className="mt-3 px-1 text-left text-sm text-muted">
         {pasteBlocked && (
           <>Paste with Ctrl+V (or ⌘V on a Mac), then press Enter. </>
         )}
-        Public links only.{" "}
+        Public links to media you own or may download.{" "}
         <Link href="/supported-sites" className={linkInline}>
           See supported sites
         </Link>

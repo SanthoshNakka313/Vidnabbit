@@ -35,7 +35,7 @@ function liveMessage(extract: ExtractState, job: JobState): string {
     case "error":
       return "";
     case "loading":
-      return "Getting media";
+      return "Nabbing your media";
     case "challenge":
       return "Quick check needed before we can read this link";
     case "success":
@@ -187,12 +187,12 @@ export function Downloader() {
       </p>
 
       {extract.status !== "idle" && (
-        <section aria-label="Result" className="flex flex-col gap-6">
+        <section aria-label="Result" className="flex flex-col gap-6 rounded-xl border border-border bg-surface p-5 text-left shadow-lg sm:p-7">
           {extract.status === "loading" && <ResultSkeleton />}
 
           {extract.status === "challenge" && (
             <div className="flex flex-col gap-3">
-              <h2 className="text-lg font-semibold">Quick check needed</h2>
+              <h2 className="text-lg">Quick check needed</h2>
               <Turnstile
                 onToken={(token) => void runExtract(extract.url, token)}
                 onError={() =>

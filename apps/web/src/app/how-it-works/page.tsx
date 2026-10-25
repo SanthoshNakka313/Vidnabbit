@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/site";
 import Link from "next/link";
 import { HowItWorksSteps } from "@/components/HowItWorksSteps";
 import { PageShell } from "@/components/PageShell";
 
-export const metadata: Metadata = { title: "How it works" };
+export const metadata: Metadata = pageMetadata({
+  title: "How it works",
+  description:
+    "Paste a public link, pick a format and save the file. See what happens to your download, the limits, and why some links are refused.",
+  path: "/how-it-works",
+});
 
 export default function HowItWorksPage() {
   return (

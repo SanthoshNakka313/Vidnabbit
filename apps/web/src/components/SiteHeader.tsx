@@ -1,20 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { IconMenu, IconX } from "./icons";
 import { Wordmark } from "./Wordmark";
 
 const NAV = [
-  { href: "/supported-sites", label: "Supported sites" },
   { href: "/how-it-works", label: "How it works" },
+  { href: "/supported-sites", label: "Supported sites" },
+  { href: "/faq", label: "FAQ" },
 ];
 
 const navLink =
-  "inline-flex items-center min-h-tap px-3 rounded-md text-text font-medium hover:bg-surface-2";
+  "inline-flex items-center min-h-tap px-3.5 rounded-full font-bold text-text/80 transition-colors " +
+  "hover:text-text hover:bg-surface-2 aria-[current=page]:text-text aria-[current=page]:bg-accent-subtle";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
 
@@ -31,28 +35,40 @@ export function SiteHeader() {
   }, [open]);
 
   return (
-    <header className="border-b border-border">
-      <div className="mx-auto flex max-w-page items-center justify-between gap-4 px-4 py-2 sm:px-6">
+    <header className="sticky top-0 z-40 border-b border-border/70 bg-bg/80 backdrop-blur-md">
+      <div className="mx-auto flex max-w-page items-center justify-between gap-4 px-4 py-2.5 sm:px-6">
         <Wordmark />
-        <nav aria-label="Main" className="hidden sm:block">
+        <nav aria-label="Main" className="hidden md:block">
           <ul className="flex items-center gap-1">
             {NAV.map((item) => (
               <li key={item.href}>
-                <Link href={item.href} className={navLink}>
+                <Link
+                  href={item.href}
+                  aria-current={pathname === item.href ? "page" : undefined}
+                  className={navLink}
+                >
                   {item.label}
                 </Link>
               </li>
             ))}
+            <li className="ml-2">
+              <Link
+                href="/#nab"
+                className="inline-flex min-h-tap items-center rounded-full bg-ink px-5 font-bold text-white transition-transform hover:-translate-y-px dark:bg-white dark:text-ink"
+              >
+                Nab a link
+              </Link>
+            </li>
           </ul>
         </nav>
-        <div className="sm:hidden">
+        <div className="md:hidden">
           <button
             ref={buttonRef}
             type="button"
             aria-expanded={open}
             aria-controls={menuId}
             onClick={() => setOpen((o) => !o)}
-            className="inline-flex min-h-tap items-center gap-2 rounded-md px-3 font-medium hover:bg-surface-2"
+            className="inline-flex min-h-tap items-center gap-2 rounded-full px-4 font-bold hover:bg-surface-2"
           >
             {open ? <IconX /> : <IconMenu />}
             Menu
@@ -63,12 +79,17 @@ export function SiteHeader() {
         id={menuId}
         aria-label="Main"
         hidden={!open}
-        className="border-t border-border px-4 pb-3 pt-2 sm:hidden"
+        className="border-t border-border px-4 pb-4 pt-2 md:hidden"
       >
         <ul className="flex flex-col gap-1">
           {NAV.map((item) => (
             <li key={item.href}>
-              <Link href={item.href} className={`${navLink} w-full`} onClick={() => setOpen(false)}>
+              <Link
+                href={item.href}
+                aria-current={pathname === item.href ? "page" : undefined}
+                className={`${navLink} w-full`}
+                onClick={() => setOpen(false)}
+              >
                 {item.label}
               </Link>
             </li>

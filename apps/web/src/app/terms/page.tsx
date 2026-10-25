@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/site";
 import Link from "next/link";
 import { DraftBanner, PageShell } from "@/components/PageShell";
 
-export const metadata: Metadata = { title: "Terms of use" };
+export const metadata: Metadata = pageMetadata({
+  title: "Terms of use",
+  description:
+    "The rules for using VidNabbit: only download media you own or have permission to use, no DRM or sign-in content, and fair use of the service.",
+  path: "/terms",
+});
 
 export default function TermsPage() {
   return (

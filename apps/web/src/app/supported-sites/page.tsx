@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/site";
 import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
 
-export const metadata: Metadata = { title: "Supported sites" };
+export const metadata: Metadata = pageMetadata({
+  title: "Supported sites",
+  description:
+    "Which links VidNabbit can save: public video, audio and image pages that play without signing in. What never works: DRM, logins, private and live content.",
+  path: "/supported-sites",
+});
 
 const WORKS = [
   "Public videos on large video platforms (for example YouTube, Vimeo, Dailymotion), when the video plays without signing in",

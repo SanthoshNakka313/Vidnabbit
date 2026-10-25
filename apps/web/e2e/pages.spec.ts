@@ -49,7 +49,7 @@ test("legal drafts are clearly marked", async ({ page }) => {
 test("home has no horizontal scroll with a result shown", async ({ page }) => {
   await page.goto("/");
   await page.getByLabel("Paste a link").fill("https://example.com/watch?v=1");
-  await page.getByRole("button", { name: "Get media" }).click();
+  await page.getByRole("button", { name: "Nab it" }).click();
   await expect(page.getByTestId("result-title")).toBeVisible();
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth,

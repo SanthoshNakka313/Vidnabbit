@@ -148,7 +148,7 @@ export function TakedownForm() {
     "aria-invalid": errors[f] ? true : undefined,
     "aria-describedby": errors[f] ? errId(f) : undefined,
   });
-  const label = "mb-1 block font-medium";
+  const label = "mb-1 block font-bold";
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
@@ -211,7 +211,7 @@ export function TakedownForm() {
         {fieldError("organisation")}
       </div>
       <fieldset className="flex flex-col gap-3">
-        <legend className="mb-2 font-medium">Statements (both required)</legend>
+        <legend className="mb-2 font-bold">Statements (both required)</legend>
         {(
           [
             ["goodFaith", STATEMENT_GOOD_FAITH],

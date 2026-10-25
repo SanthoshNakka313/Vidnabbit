@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/site";
 import Link from "next/link";
 import { DraftBanner, PageShell } from "@/components/PageShell";
 import { TakedownForm } from "@/components/TakedownForm";
 
-export const metadata: Metadata = { title: "Copyright & takedown" };
+export const metadata: Metadata = pageMetadata({
+  title: "Copyright & takedown",
+  description:
+    "Rights holders can ask VidNabbit to block links to their content or exclude a whole site. How takedowns work, plus the request form.",
+  path: "/copyright",
+});
 
 export default function CopyrightPage() {
   return (

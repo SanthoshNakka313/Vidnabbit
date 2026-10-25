@@ -8,9 +8,9 @@ import { IconAlert, IconInfo } from "../icons";
 import { buttonPrimary, linkInline } from "../ui/styles";
 
 const TONE_CLASSES = {
-  danger: "bg-danger-subtle border-danger text-danger",
-  warning: "bg-warning-subtle border-warning text-warning",
-  info: "bg-surface border-strong text-text",
+  danger: "bg-danger-subtle border-[#ef4444] text-danger",
+  warning: "bg-warning-subtle border-sun text-warning",
+  info: "bg-surface-2 border-border text-text",
 } as const;
 
 interface ErrorCalloutProps {
@@ -55,12 +55,12 @@ export function ErrorCallout({ error, context, onAction, autoFocus = true }: Err
     <div
       role="alert"
       data-error-code={error.code}
-      className={`rounded-lg border p-4 sm:p-5 ${TONE_CLASSES[copy.tone]}`}
+      className={`rounded-lg border-2 p-5 sm:p-6 ${TONE_CLASSES[copy.tone]}`}
     >
       <div className="flex gap-3">
         <Icon className="mt-0.5 shrink-0" />
         <div className="min-w-0 flex-1">
-          <h2 ref={titleRef} tabIndex={-1} className="text-lg font-semibold">
+          <h2 ref={titleRef} tabIndex={-1} className="text-lg">
             {copy.title}
           </h2>
           <p className="mt-1 text-text">{copy.description}</p>
