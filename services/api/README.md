@@ -20,7 +20,7 @@ Then run the web app (`npm run dev` in `apps/web`) and open http://localhost:300
 
 - Without `DATABASE_URL` (local dev): takedown requests and the blocklist are JSON files under `DATA_DIR`.
 - With `DATABASE_URL` (required in production): Postgres (`pg.py`, schema in `app/migrations/`, applied at startup). Each API instance and worker keeps the active blocklist in memory, refreshes it every `BLOCKLIST_REFRESH_SECONDS` and at once when a change is published on Redis. If Postgres can't be reached at startup the process refuses to start; if a later refresh fails, the last snapshot stays in force.
-- A takedown request and its provisional URL blocks are written in one transaction. Requests (personal data) are deleted after `TAKEDOWN_RETENTION_DAYS` (default 3 years, **legal to confirm**) by a daily worker task; the blocks stay.
+- A takedown request and its provisional URL blocks are written in one transaction. Requests (personal data) are deleted after `TAKEDOWN_RETENTION_DAYS` (3 years, confirmed by the owner) by a daily worker task; the blocks stay.
 - Operator CLI, run on the host: `uv run python -m app.admin --help` (list and review takedowns, decide them, block or unblock URLs, `site media_id` items and verified domain exclusions, purge).
 
 Run the Postgres tests against a throwaway database: `VN_TEST_DATABASE_URL=postgresql://... uv run pytest tests/test_pg.py` (they drop and recreate the schema).

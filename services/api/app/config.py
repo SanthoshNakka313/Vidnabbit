@@ -72,8 +72,8 @@ class Settings(BaseSettings):
     # Postgres for takedowns + blocklist (required in production); unset = JSON files
     database_url: SecretStr | None = None
     blocklist_refresh_seconds: float = 30.0
-    # How long takedown requests (personal data) are kept. Proposed 3 years in
-    # docs/02 section 11: legal must confirm before launch.
+    # How long takedown requests (personal data) are kept: 3 years, confirmed by
+    # the owner 2026-10-25 (docs/02 section 11 item 4).
     takedown_retention_days: int = 3 * 365
 
     # Storage / dirs
