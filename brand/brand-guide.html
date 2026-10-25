@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VidNabbit Brand Guide</title>
+<link rel="icon" href="svg/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root { --ink:#1e1b2e; --muted:#6b6880; --line:#ece8f2; --bg:#faf8fc; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:Nunito, system-ui, sans-serif; }
+  main { max-width:1000px; margin:0 auto; padding:40px 16px 64px; }
+  header img { height:72px; max-width:100%; }
+  h2 { font-size:22px; font-weight:900; margin:48px 0 6px; }
+  p.lead { color:var(--muted); margin:0 0 18px; line-height:1.55; }
+  .grid { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+  .tile { background:#fff; border:1px solid var(--line); border-radius:16px; padding:24px; display:flex; flex-direction:column; gap:12px; }
+  .tile .show { min-height:120px; display:flex; align-items:center; justify-content:center; border-radius:10px; }
+  .tile .show img { max-width:100%; max-height:110px; }
+  .tile small { color:var(--muted); font-size:13px; }
+  .dark { background:#14121f; }
+  .swatch { height:84px; border-radius:10px; }
+  code { font-size:13px; background:#f1edf6; padding:2px 6px; border-radius:6px; }
+  .sizes { display:flex; align-items:flex-end; gap:22px; flex-wrap:wrap; }
+  .sizes figure { margin:0; text-align:center; font-size:12px; color:var(--muted); }
+  ul { line-height:1.8; padding-left:20px; }
+  .demo { display:flex; gap:10px; flex-wrap:wrap; }
+  .demo input { flex:1; min-width:200px; font:inherit; padding:14px 16px; border:2px solid var(--line); border-radius:12px; }
+  .demo button { font:inherit; font-weight:900; color:#fff; border:0; border-radius:12px; padding:14px 26px;
+    background:linear-gradient(135deg,#ff4d6d,#7c3aed); }
+  .chips span { display:inline-block; font-weight:700; font-size:13px; padding:6px 12px; border-radius:99px; border:1.5px solid var(--line); margin:4px 4px 0 0; }
+  .chips span.on { border-color:#7c3aed; color:#7c3aed; background:#f3edff; }
+  .chips span.hd { background:#ffd166; border-color:#ffd166; }
+</style>
+</head>
+<body>
+<main>
+  <header><img src="svg/vidnabbit-logo-horizontal.svg" alt="VidNabbit"></header>
+  <p class="lead" style="margin-top:14px">VidNabbit is a fast, friendly downloader for videos, images and audio. The logo is a rabbit (the "nabbit") whose face is a play button pointing down onto a tray, so it reads as play and download at the same time.</p>
+
+  <h2>Logo versions</h2>
+  <p class="lead">SVG files are in <code>svg/</code> and PNG files are in <code>png/</code>. Use SVG wherever you can.</p>
+  <div class="grid">
+    <div class="tile"><div class="show"><img src="svg/vidnabbit-logo-horizontal.svg" alt=""></div><b>Horizontal</b><small>Main logo for the website header and documents.</small></div>
+    <div class="tile"><div class="show dark"><img src="svg/vidnabbit-logo-horizontal-dark.svg" alt=""></div><b>Horizontal on dark</b><small>For dark backgrounds and dark mode.</small></div>
+    <div class="tile"><div class="show"><img src="svg/vidnabbit-logo-stacked.svg" alt=""></div><b>Stacked</b><small>For splash screens, posters and square spaces.</small></div>
+    <div class="tile"><div class="show"><img src="svg/vidnabbit-icon.svg" alt=""></div><b>App icon</b><small>For app stores, the home screen and social profiles.</small></div>
+    <div class="tile"><div class="show"><img src="svg/vidnabbit-mark.svg" alt=""></div><b>Mark only</b><small>For loaders, empty states and small UI spots.</small></div>
+    <div class="tile"><div class="show"><img src="svg/vidnabbit-logo-mono-black.svg" alt=""></div><b>One colour</b><small>For print and overlays. A white version is in the files too.</small></div>
+  </div>
+
+  <h2>Icon sizes</h2>
+  <div class="tile"><div class="sizes">
+    <figure><img src="png/vidnabbit-icon-1024.png" width="128" alt=""><figcaption>1024 · App Store</figcaption></figure>
+    <figure><img src="png/vidnabbit-icon-512.png" width="96" alt=""><figcaption>512 · Play Store</figcaption></figure>
+    <figure><img src="png/vidnabbit-icon-192.png" width="64" alt=""><figcaption>192 · Android/PWA</figcaption></figure>
+    <figure><img src="png/vidnabbit-icon-180.png" width="48" alt=""><figcaption>180 · iPhone home</figcaption></figure>
+    <figure><img src="png/vidnabbit-icon-32.png" width="32" alt=""><figcaption>32 · favicon</figcaption></figure>
+    <figure><img src="png/vidnabbit-icon-16.png" width="16" alt=""><figcaption>16 · favicon</figcaption></figure>
+  </div></div>
+
+  <h2>Colours</h2>
+  <div class="grid">
+    <div class="tile"><div class="swatch" style="background:#f43f5e"></div><b>Nabbit Rose</b><small><code>#F43F5E</code> · primary, CTAs</small></div>
+    <div class="tile"><div class="swatch" style="background:#ff4d6d"></div><b>Coral</b><small><code>#FF4D6D</code> · gradient start</small></div>
+    <div class="tile"><div class="swatch" style="background:#7c3aed"></div><b>Violet</b><small><code>#7C3AED</code> · gradient end, selections</small></div>
+    <div class="tile"><div class="swatch" style="background:#ffd166"></div><b>Sun</b><small><code>#FFD166</code> · HD / 4K badges</small></div>
+    <div class="tile"><div class="swatch" style="background:#ffb3c1"></div><b>Blush</b><small><code>#FFB3C1</code> · soft backgrounds</small></div>
+    <div class="tile"><div class="swatch" style="background:#1e1b2e"></div><b>Ink</b><small><code>#1E1B2E</code> · text, dark backgrounds</small></div>
+  </div>
+  <p class="lead" style="margin-top:14px">Gradient: <code>linear-gradient(135deg, #FF4D6D, #7C3AED)</code></p>
+
+  <h2>UI sample</h2>
+  <div class="tile">
+    <div class="demo"><input value="https://example.com/my-video.mp4" aria-label="Paste link"><button>Nab it</button></div>
+    <div class="chips"><span class="on">MP4 · 1080p</span><span>MP4 · 720p</span><span>MP3 · Audio</span><span>JPG · Thumbnail</span><span class="hd">HD</span></div>
+  </div>
+
+  <h2>Typography &amp; voice</h2>
+  <div class="tile">
+    <div style="font-weight:900;font-size:32px;letter-spacing:-.5px">Paste it. Nab it.</div>
+    <div style="font-weight:700;font-size:18px">Nunito 900 for headings, 700 for buttons, 400 for body text.</div>
+    <div style="color:var(--muted)">Keep the voice playful and quick: "Nabbed! Your video is ready." Errors and legal text stay plain and clear.</div>
+  </div>
+
+  <h2>Do's and don'ts</h2>
+  <div class="tile"><ul>
+    <li>✅ Use the provided files. Use the dark version on dark backgrounds.</li>
+    <li>✅ Position VidNabbit for media you own or have rights to.</li>
+    <li>❌ Don't stretch, rotate or recolour the logo, and don't add shadows.</li>
+    <li>❌ Don't use the horizontal logo below 120 px wide. Use the icon instead.</li>
+  </ul></div>
+</main>
+</body>
+</html>
