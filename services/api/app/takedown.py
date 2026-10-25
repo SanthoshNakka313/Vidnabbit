@@ -1,13 +1,15 @@
-"""Takedown (DMCA-style) requests: validation and local JSONL storage.
+"""Takedown (DMCA-style) requests: validation, and file storage for local dev.
 
-Submissions contain personal data (name, email, signature). They are written
-to a file with 0600 permissions, never logged, and their URLs are added to the
-blocklist provisionally (docs/03 2.9, 7.2 A). Domain exclusions are never
-automatic. Production: Postgres, encrypted at rest (docs/02 ADR-006).
+Submissions contain personal data (name, email, signature). They are never
+logged, and their URLs are added to the blocklist provisionally (docs/03 2.9,
+7.2 A). Domain exclusions are never automatic. With ``DATABASE_URL`` set they go
+to Postgres instead (``app.pg.PostgresTakedownStore``, required in production);
+without it, :class:`TakedownStore` appends to a 0600 JSONL file.
 """
 
 from __future__ import annotations
 
+import asyncio
 import datetime as dt
 import json
 import os
@@ -15,7 +17,7 @@ import re
 import secrets
 import threading
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
@@ -70,11 +72,17 @@ class TakedownRequest(BaseModel):
 
 
 class TakedownStore:
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, blocklist: Any) -> None:
         self.path = path
+        self.blocklist = blocklist  # JsonFileBlocklist: other processes reload on change
         self._lock = threading.Lock()
 
-    def save(self, req: TakedownRequest) -> str:
+    async def save(self, req: TakedownRequest) -> str:
+        record_id = await asyncio.to_thread(self._append, req)
+        self.blocklist.add_urls(req.urls)  # provisional block (docs/03 2.9)
+        return record_id
+
+    def _append(self, req: TakedownRequest) -> str:
         record_id = secrets.token_urlsafe(12)
         record = {
             "id": record_id,

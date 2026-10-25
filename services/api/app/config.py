@@ -69,6 +69,13 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     worker_shutdown_grace_seconds: int = 600  # finish running jobs on SIGTERM
 
+    # Postgres for takedowns + blocklist (required in production); unset = JSON files
+    database_url: SecretStr | None = None
+    blocklist_refresh_seconds: float = 30.0
+    # How long takedown requests (personal data) are kept. Proposed 3 years in
+    # docs/02 section 11: legal must confirm before launch.
+    takedown_retention_days: int = 3 * 365
+
     # Storage / dirs
     storage_backend: Literal["local", "r2"] = "local"
     r2_account_id: str | None = None
@@ -188,6 +195,8 @@ class Settings(BaseSettings):
                 problems.append("refusing to run as root")
             if self.storage_backend == "local":
                 problems.append("STORAGE_BACKEND=local is for development only")
+            if self.database_url is None:
+                problems.append("DATABASE_URL is required (takedowns are legal records)")
             if self.queue_backend != "redis":
                 problems.append("QUEUE_BACKEND=redis is required (workers run downloads)")
             if problems:

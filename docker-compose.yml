@@ -1,5 +1,5 @@
 # Local dev stack, hardened like production (docs/02 section 3): API + download
-# worker + Redis. The web app runs outside Docker: `npm run dev` in apps/web.
+# worker + Redis + Postgres. The web app runs outside Docker: `npm run dev` in apps/web.
 #   docker compose up --build
 x-hardening: &hardening
   read_only: true
@@ -11,6 +11,7 @@ x-app-env: &app-env
   APP_ENV: development
   QUEUE_BACKEND: redis
   REDIS_URL: redis://redis:6379/0
+  DATABASE_URL: postgresql://vidnabbit:dev-only-password@postgres:5432/vidnabbit
   CORS_ORIGINS: http://localhost:3000
   PUBLIC_BASE_URL: http://localhost:8000
   # Fixed secrets so the API and worker agree; development values only.
@@ -23,7 +24,9 @@ services:
     ports: ["127.0.0.1:8000:8000"]
     environment: *app-env
     volumes: ["work:/work"]  # shared with the worker: local files, blocklist, takedowns
-    depends_on: [redis]
+    depends_on:
+      redis: {condition: service_started}
+      postgres: {condition: service_healthy}
     pids_limit: 512
     mem_limit: 1g
     <<: *hardening
@@ -33,7 +36,9 @@ services:
     command: ["arq", "app.worker.WorkerSettings"]
     environment: *app-env
     volumes: ["work:/work"]
-    depends_on: [redis]
+    depends_on:
+      redis: {condition: service_started}
+      postgres: {condition: service_healthy}
     healthcheck: {disable: true}  # the image's check probes the API port
     pids_limit: 512
     mem_limit: 3g
@@ -45,5 +50,21 @@ services:
     command: ["redis-server", "--save", "", "--appendonly", "no"]  # ephemeral by design
     <<: *hardening
 
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: vidnabbit
+      POSTGRES_PASSWORD: dev-only-password
+      POSTGRES_DB: vidnabbit
+    volumes: ["pgdata:/var/lib/postgresql"]  # takedowns are legal records: persisted
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vidnabbit -d vidnabbit"]
+      interval: 2s
+      retries: 30
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]  # entrypoint drops to postgres
+    security_opt: ["no-new-privileges:true"]
+
 volumes:
   work:
+  pgdata:

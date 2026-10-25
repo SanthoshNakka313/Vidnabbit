@@ -26,6 +26,7 @@ from app.config import Settings, get_settings
 from app.errors import ApiError, ErrorCode
 from app.extractor import Extractor, ExtractRecord, ExtractResult, resolve_ffmpeg_location
 from app.jobs import JobRunner
+from app.pg import Database, PostgresBlocklist, PostgresTakedownStore
 from app.policy import JsonFileBlocklist, KillSwitches, Limits, Policy, canonicalize_url
 from app.queue import RedisJobQueue
 from app.ratelimit import DAY, HOUR, MINUTE, ByteQuota, ClientHasher, RateLimiter, Rule
@@ -199,18 +200,34 @@ class Services:
     bytes_quota: ByteQuota | RedisByteQuota
     hasher: ClientHasher
     turnstile: TurnstileVerifier
-    takedowns: TakedownStore
+    takedowns: TakedownStore | PostgresTakedownStore
     extract_cache: TTLCache[ExtractResult]
     negative_cache: TTLCache[ApiError]
     extracts: MemoryExtractStore | RedisExtractStore
     trusted_proxies: list[ipaddress.IPv4Network | ipaddress.IPv6Network]
     redis: RedisConnection | None = None
+    db: Database | None = None
 
 
-def build_policy(settings: Settings) -> Policy:
+def build_blocklist(settings: Settings, db: Database | None,
+                    redis: RedisConnection | None = None) -> JsonFileBlocklist | PostgresBlocklist:
+    if db is not None:
+        return PostgresBlocklist(db, refresh_seconds=settings.blocklist_refresh_seconds,
+                                 redis=redis)
+    return JsonFileBlocklist(settings.blocklist_path)
+
+
+def build_database(settings: Settings) -> Database | None:
+    if settings.database_url is None:
+        return None
+    return Database(settings.database_url.get_secret_value())
+
+
+def build_policy(settings: Settings,
+                 blocklist: JsonFileBlocklist | PostgresBlocklist | None = None) -> Policy:
     set_extra_denied_networks(settings.extra_denied_list)
     return Policy(
-        JsonFileBlocklist(settings.blocklist_path),
+        blocklist or JsonFileBlocklist(settings.blocklist_path),
         Limits(settings.max_duration_seconds, settings.max_filesize_bytes),
         KillSwitches(
             extraction_enabled=settings.extraction_enabled,
@@ -262,8 +279,13 @@ def build_storage(settings: Settings) -> Storage:
 
 
 def build_services(settings: Settings, extractor: Any | None = None,
-                   storage: Storage | None = None, redis_pool: Any | None = None) -> Services:
-    policy = build_policy(settings)
+                   storage: Storage | None = None, redis_pool: Any | None = None,
+                   db: Database | None = None) -> Services:
+    redis = (RedisConnection(settings.redis_url, pool=redis_pool)
+             if settings.queue_backend == "redis" else None)
+    db = db or build_database(settings)
+    blocklist = build_blocklist(settings, db, redis)
+    policy = build_policy(settings, blocklist)
     if extractor is None:
         extractor = build_extractor(settings, policy)
     if storage is None:
@@ -272,10 +294,8 @@ def build_services(settings: Settings, extractor: Any | None = None,
     bytes_quota: ByteQuota | RedisByteQuota
     limiter: RateLimiter | RedisRateLimiter
     extracts: MemoryExtractStore | RedisExtractStore
-    redis: RedisConnection | None = None
-    if settings.queue_backend == "redis":
+    if redis is not None:
         # Everything a second API instance must agree on lives in Redis.
-        redis = RedisConnection(settings.redis_url, pool=redis_pool)
         runner = RedisJobQueue(redis, max_queue_depth=settings.max_queue_depth,
                                max_active_per_client=settings.max_active_jobs_per_client)
         bytes_quota = RedisByteQuota(redis, settings.bytes_per_client_hour,
@@ -301,7 +321,9 @@ def build_services(settings: Settings, extractor: Any | None = None,
         settings=settings, policy=policy, extractor=extractor, storage=storage, runner=runner,
         limiter=limiter, bytes_quota=bytes_quota,
         hasher=ClientHasher(settings.ip_key()), turnstile=TurnstileVerifier(settings),
-        takedowns=TakedownStore(settings.takedown_path),
+        takedowns=PostgresTakedownStore(db, blocklist)
+        if db is not None and isinstance(blocklist, PostgresBlocklist)
+        else TakedownStore(settings.takedown_path, blocklist),
         extract_cache=TTLCache(settings.extract_cache_ttl_seconds,
                                settings.extract_cache_max_entries),
         negative_cache=TTLCache(300, settings.extract_cache_max_entries),
@@ -309,6 +331,7 @@ def build_services(settings: Settings, extractor: Any | None = None,
         trusted_proxies=[ipaddress.ip_network(c, strict=False)
                          for c in settings.trusted_proxy_list],
         redis=redis,
+        db=db,
     )
 
 
@@ -326,12 +349,18 @@ def create_app(settings: Settings | None = None, *, extractor: Any | None = None
     async def lifespan(_app: FastAPI):
         if svc.redis is not None:
             await svc.redis.start()
+        if svc.db is not None:
+            await svc.db.start()  # also applies pending migrations
+            await svc.policy.blocklist.start()  # refuses to start without a snapshot
         await svc.runner.start()
         try:
             yield
         finally:
             await svc.runner.stop()
             await svc.turnstile.aclose()
+            if svc.db is not None:
+                await svc.policy.blocklist.stop()
+                await svc.db.stop()
             if svc.redis is not None:
                 await svc.redis.stop()
 
@@ -434,7 +463,7 @@ def create_app(settings: Settings | None = None, *, extractor: Any | None = None
                 raise
             svc.extract_cache.set(canonical, result)
         else:
-            svc.policy.check_url(result.webpage_url)  # a takedown may have arrived
+            svc.policy.check_reuse(result.webpage_url, result.item_keys)  # takedown since?
 
         extract_id = secrets.token_urlsafe(16)
         expires_at = time.time() + settings.extract_ttl_seconds
@@ -471,7 +500,7 @@ def create_app(settings: Settings | None = None, *, extractor: Any | None = None
         await svc.bytes_quota.check(client, int(preset.public.get("filesize_bytes") or 0))
         await svc.runner.check_capacity(client)
         await svc.turnstile.verify(body.turnstile_token, action="job", remote_ip=ip)
-        svc.policy.check_url(record.result.webpage_url)
+        svc.policy.check_reuse(record.result.webpage_url, record.result.item_keys)
         job_id = await svc.runner.submit(client, record.result.webpage_url, preset)
         return {"job_id": job_id}
 
@@ -516,8 +545,7 @@ def create_app(settings: Settings | None = None, *, extractor: Any | None = None
         ])
         if settings.turnstile_require_takedown or body.turnstile_token:
             await svc.turnstile.verify(body.turnstile_token, action="takedown", remote_ip=ip)
-        record_id = svc.takedowns.save(body)
-        svc.policy.blocklist.add_urls(body.urls)  # provisional block (docs/03 2.9)
+        record_id = await svc.takedowns.save(body)  # also blocks the URLs provisionally
         for url in body.urls:
             svc.extract_cache.pop(canonicalize_url(url))
         log.info("takedown received id=%s urls=%d", record_id, len(body.urls))

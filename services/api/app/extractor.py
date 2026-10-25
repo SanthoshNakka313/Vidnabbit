@@ -97,6 +97,9 @@ class ExtractResult:
     thumbnail_url: str | None
     media_type: Literal["video", "audio", "image", "gallery"]
     presets: list[ResolvedPreset] = field(default_factory=list)
+    # (extractor key lower, media id) for the page and every gallery entry, so a
+    # cached or stored result can be re-checked against item blocks (docs/03 2.9).
+    item_keys: list[tuple[str, str]] = field(default_factory=list)
 
     def preset(self, format_id: str) -> ResolvedPreset | None:
         return next((p for p in self.presets if p.format_id == format_id), None)
@@ -105,7 +108,8 @@ class ExtractResult:
         return {"source_site": self.source_site, "source_url": self.source_url,
                 "webpage_url": self.webpage_url, "title": self.title, "uploader": self.uploader,
                 "duration_seconds": self.duration_seconds, "thumbnail_url": self.thumbnail_url,
-                "media_type": self.media_type, "presets": [p.to_dict() for p in self.presets]}
+                "media_type": self.media_type, "presets": [p.to_dict() for p in self.presets],
+                "item_keys": [list(k) for k in self.item_keys]}
 
     @classmethod
     def from_dict(cls, d: Mapping[str, Any]) -> ExtractResult:
@@ -115,7 +119,8 @@ class ExtractResult:
                    webpage_url=str(d["webpage_url"]), title=str(d["title"]),
                    uploader=d.get("uploader"), duration_seconds=d.get("duration_seconds"),
                    thumbnail_url=d.get("thumbnail_url"), media_type=d["media_type"],
-                   presets=[ResolvedPreset.from_dict(p) for p in d.get("presets") or []])
+                   presets=[ResolvedPreset.from_dict(p) for p in d.get("presets") or []],
+                   item_keys=[(str(k[0]), str(k[1])) for k in d.get("item_keys") or []])
 
 
 @dataclass
@@ -372,6 +377,7 @@ def result_from_info(
         "uploader": clean_text(info.get("uploader"), 100),
         "thumbnail_url": info.get("thumbnail") if isinstance(info.get("thumbnail"), str)
         and str(info.get("thumbnail")).startswith("https://") else None,
+        "item_keys": _item_keys([info, *(info.get("entries") or [])]),
     }
     if info.get("_type") in ("playlist", "multi_video"):
         entries = [e for e in (info.get("entries") or []) if e][:max_gallery_items]
@@ -398,6 +404,17 @@ def result_from_info(
     media_type = "image" if kinds == {"image"} else "video" if "video" in kinds else "audio"
     return ExtractResult(duration_seconds=_num(info.get("duration")), media_type=media_type,
                          presets=presets, **common)
+
+
+def _item_keys(infos: list[Any]) -> list[tuple[str, str]]:
+    keys: list[tuple[str, str]] = []
+    for i in infos:
+        if not isinstance(i, Mapping):
+            continue
+        site = str(i.get("extractor_key") or i.get("ie_key") or "").lower()
+        if site and i.get("id") is not None and (site, str(i["id"])) not in keys:
+            keys.append((site, str(i["id"])))
+    return keys
 
 
 # ------------------------------------------------------------------ facade

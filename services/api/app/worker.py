@@ -25,7 +25,14 @@ from app.config import Settings, get_settings
 from app.errors import ApiError, ErrorCode
 from app.extractor import ResolvedPreset
 from app.jobs import perform_download, queue_wait_exceeded, sweep_work_dir, wipe_work_dir
-from app.main import build_extractor, build_policy, build_storage
+from app.main import (
+    build_blocklist,
+    build_database,
+    build_extractor,
+    build_policy,
+    build_storage,
+)
+from app.pg import purge_expired_takedowns
 from app.queue import (
     QUEUE_NAME,
     TASK_NAME,
@@ -37,7 +44,7 @@ from app.queue import (
     mark_running,
     set_progress,
 )
-from app.redis_state import add_bytes
+from app.redis_state import RedisConnection, add_bytes
 
 log = logging.getLogger("vidnabbit.worker")
 PROGRESS_FLUSH_SECONDS = 1.0
@@ -48,10 +55,25 @@ async def startup(ctx: dict[str, Any], settings: Settings | None = None) -> None
     logging.basicConfig(level=settings.log_level.upper(),
                         format="%(asctime)s %(levelname)s %(name)s %(message)s")
     ctx["settings"] = settings
-    ctx.setdefault("extractor", build_extractor(settings, build_policy(settings)))
+    db = ctx.get("db") or build_database(settings)
+    ctx["db"] = db
+    if db is not None:
+        await db.start()
+    redis = RedisConnection(pool=ctx["redis"]) if ctx.get("redis") is not None else None
+    blocklist = build_blocklist(settings, db, redis)
+    if db is not None:
+        await blocklist.start()  # refuses to start without a snapshot (never fail open)
+    ctx["blocklist"] = blocklist
+    ctx.setdefault("extractor", build_extractor(settings, build_policy(settings, blocklist)))
     ctx.setdefault("storage", build_storage(settings))
     ctx["work_dir"] = settings.work_dir.resolve()
     wipe_work_dir(ctx["work_dir"])
+
+
+async def shutdown(ctx: dict[str, Any]) -> None:
+    if ctx.get("db") is not None:
+        await ctx["blocklist"].stop()
+        await ctx["db"].stop()
 
 
 async def download_job(ctx: dict[str, Any], job_id: str) -> str:
@@ -137,11 +159,17 @@ async def sweep(ctx: dict[str, Any]) -> None:
         log.info("sweeper removed %d expired files", removed)
 
 
+async def purge_takedowns(ctx: dict[str, Any]) -> None:
+    if ctx.get("db") is not None:
+        await purge_expired_takedowns(ctx["db"], ctx["settings"].takedown_retention_days)
+
+
 def worker_options(settings: Settings) -> dict[str, Any]:
     """Everything arq needs except the Redis connection (shared with tests)."""
     return {
         "functions": [func(download_job, name=TASK_NAME)],
-        "cron_jobs": [cron(sweep, minute=set(range(0, 60, 5)), run_at_startup=True)],
+        "cron_jobs": [cron(sweep, minute=set(range(0, 60, 5)), run_at_startup=True),
+                      cron(purge_takedowns, hour=3, minute=17, unique=True)],
         "queue_name": QUEUE_NAME,
         "max_jobs": settings.worker_concurrency,
         # The sandbox enforces job_timeout itself; this is the outer backstop.
@@ -160,6 +188,7 @@ class WorkerSettings:
     """Entry point for ``arq app.worker.WorkerSettings``."""
 
     on_startup = startup
+    on_shutdown = shutdown
     redis_settings = RedisSettings.from_dsn(_settings.redis_url)
     functions = _options["functions"]
     cron_jobs = _options["cron_jobs"]

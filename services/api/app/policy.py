@@ -261,6 +261,15 @@ class Policy:
         if self.blocklist.is_url_blocked(canonicalize_url(url)):
             raise ApiError(ErrorCode.BLOCKED_BY_RIGHTS_HOLDER)
 
+    def check_reuse(self, webpage_url: str, item_keys: Iterable[tuple[str, str]]) -> None:
+        """Before reusing a cached or stored extract: a takedown may have arrived since."""
+        self.check_url(webpage_url)
+        for site, item_id in item_keys:
+            if self.blocklist.is_item_blocked(site, item_id):
+                raise ApiError(ErrorCode.BLOCKED_BY_RIGHTS_HOLDER)
+            if site in self.kill.disabled_extractors:
+                raise ApiError(ErrorCode.UNSUPPORTED_SITE, "This site isn't available right now.")
+
     def check_info(self, info: Mapping[str, Any]) -> None:
         """Metadata checks after extraction and again at job start (docs/03 5.1 step 6).
 

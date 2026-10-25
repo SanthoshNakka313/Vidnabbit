@@ -14,7 +14,16 @@ uv run pytest -m network                  # live smoke tests (hit real sites)
 uv run ruff check .
 ```
 
-Then run the web app (`npm run dev` in `apps/web`) and open http://localhost:3000. With Docker instead: `docker compose up --build` from the repo root (API, download worker and Redis).
+Then run the web app (`npm run dev` in `apps/web`) and open http://localhost:3000. With Docker instead: `docker compose up --build` from the repo root (API, download worker, Redis and Postgres).
+
+### Takedowns and the blocklist
+
+- Without `DATABASE_URL` (local dev): takedown requests and the blocklist are JSON files under `DATA_DIR`.
+- With `DATABASE_URL` (required in production): Postgres (`pg.py`, schema in `app/migrations/`, applied at startup). Each API instance and worker keeps the active blocklist in memory, refreshes it every `BLOCKLIST_REFRESH_SECONDS` and at once when a change is published on Redis. If Postgres can't be reached at startup the process refuses to start; if a later refresh fails, the last snapshot stays in force.
+- A takedown request and its provisional URL blocks are written in one transaction. Requests (personal data) are deleted after `TAKEDOWN_RETENTION_DAYS` (default 3 years, **legal to confirm**) by a daily worker task; the blocks stay.
+- Operator CLI, run on the host: `uv run python -m app.admin --help` (list and review takedowns, decide them, block or unblock URLs, `site media_id` items and verified domain exclusions, purge).
+
+Run the Postgres tests against a throwaway database: `VN_TEST_DATABASE_URL=postgresql://... uv run pytest tests/test_pg.py` (they drop and recreate the schema).
 
 ### Job queue
 
@@ -45,6 +54,7 @@ Inside the child, every connection yt-dlp opens (redirects, CDN and HLS/DASH seg
 | `jobs.py` | Shared download step, in-process job runner and janitor |
 | `queue.py`, `worker.py` | Redis job records and caps; the arq download worker and sweeper |
 | `redis_state.py` | Shared Redis connection, rate limiter (atomic Lua), byte quota, extract records |
+| `pg.py`, `migrations/`, `admin.py` | Postgres takedowns and blocklist, schema migrations, operator CLI |
 | `storage.py` | Local and R2 storage, signed tokens, safe filenames, expiry sweeps |
 | `ratelimit.py`, `turnstile.py`, `takedown.py`, `cache.py`, `errors.py` | As named |
 
@@ -57,7 +67,7 @@ Inside the child, every connection yt-dlp opens (redirects, CDN and HLS/DASH seg
 
 ## Not built yet
 
-- Running **more than one API instance** still needs a shared blocklist: takedowns are a JSON file under `DATA_DIR`, so all API instances and workers must share that volume (one host) until it moves to Postgres. Extract caches are per instance by design; they only save work, and every cache hit re-checks the blocklist.
+- Takedown email notifications to the operator (provider TBD); for now check `python -m app.admin takedowns --open`.
+- Deleting live R2 files and queued jobs when a block is added (docs/03 7.2 A step 2). New downloads are refused at once; files already made expire within the hour.
 - Extraction still runs in a sandbox child of the API process; docs/02 ADR-003 moves it to an `extract` worker queue.
-- Postgres for takedowns and the blocklist (they are JSON files under `DATA_DIR` for now).
 - The egress proxy (Smokescreen) container and the infra in docs/02 section 8.

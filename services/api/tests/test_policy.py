@@ -116,3 +116,20 @@ def test_json_blocklist_add_urls_persists(tmp_path: Path) -> None:
     fresh = JsonFileBlocklist(path)
     assert fresh.is_url_blocked("https://example.com/x")
     assert json.loads(path.read_text())["urls"] == ["https://example.com/x"]
+
+
+def test_reused_extract_is_rechecked_for_item_blocks() -> None:
+    """A cached/stored extract must honour item blocks added after it was made."""
+    from app.extractor import ExtractResult, FormatSelector, result_from_info
+
+    bl = InMemoryBlocklist()
+    policy = Policy(bl)
+    result = result_from_info(yt_like_info(), "https://youtu.be/abc123", policy,
+                              FormatSelector())
+    assert result.item_keys == [("youtube", "abc123")]
+    assert code_of(policy.check_reuse, result.webpage_url, result.item_keys) is None
+    bl.add_item("Youtube", "abc123")  # e.g. a takedown for a different URL variant
+    assert code_of(policy.check_reuse, result.webpage_url,
+                   result.item_keys) == "blocked_by_rights_holder"
+    # The keys survive the round trip through Redis.
+    assert ExtractResult.from_dict(result.to_dict()).item_keys == result.item_keys
