@@ -1,0 +1,57 @@
+[project]
+name = "vidnabbit-api"
+version = "0.1.0"
+description = "VidNabbit API: extract and download public media with yt-dlp"
+requires-python = ">=3.12.4,<3.13"
+dependencies = [
+    "fastapi==0.161.1",
+    "httpx==0.28.1",
+    "idna==3.20",
+    "pydantic==2.14.1",
+    "pydantic-settings==2.16.1",
+    "uvicorn[standard]==0.54.0",
+    "yt-dlp==2026.10.21",
+]
+
+[project.optional-dependencies]
+# Production queue (Redis + arq worker). Not needed for local dev.
+queue = [
+    "arq==0.28.0",
+    "redis==5.3.1",
+]
+
+[dependency-groups]
+dev = [
+    # Static ffmpeg binary for local dev/tests (the Docker image uses apt ffmpeg).
+    "imageio-ffmpeg==0.6.0",
+    "pytest==9.1.1",
+    "ruff==0.17.2",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q -m 'not network'"
+markers = [
+    "network: tests that hit the real internet (deselected by default; run with -m network)",
+]
+filterwarnings = [
+    "error::pytest.PytestUnraisableExceptionWarning",
+    # fastapi.testclient still wraps httpx; nothing to fix on our side.
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = [".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF", "ASYNC"]
+# ASYNC109: explicit timeout parameters are intentional (sandbox, DNS).
+ignore = ["ASYNC109"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106", "S108"]

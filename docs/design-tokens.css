@@ -1,0 +1,206 @@
+/*
+ * VidNabbit design tokens (v1). Source of truth: docs/04-design.md, section 4.
+ * Copy into apps/web/app/globals.css after `@import "tailwindcss";`.
+ *
+ * Brand colours are PLACEHOLDERS (neutral slate + indigo accent) until the
+ * owner supplies a brand. Contrast ratios are listed next to each text pair
+ * (WCAG 2.x relative luminance; AA = 4.5:1 text, 3:1 UI/large text).
+ */
+
+:root {
+  color-scheme: light dark;
+
+  /* ---------- Colour: light (default) ---------- */
+  --vn-bg: #ffffff;               /* page background */
+  --vn-surface: #f8fafc;          /* cards, result panel */
+  --vn-surface-2: #f1f5f9;        /* format row hover, skeleton base, code */
+  --vn-text: #0f172a;             /* 17.85:1 on bg, 17.08 on surface, 16.31 on surface-2 */
+  --vn-text-muted: #475569;       /* 7.58:1 on bg, 7.24 on surface, 6.92 on surface-2 */
+  --vn-border: #e2e8f0;           /* decorative dividers only (not a control boundary) */
+  --vn-border-strong: #64748b;    /* input/select outlines: 4.76:1 on bg (>= 3:1 non-text) */
+
+  --vn-accent: #4f46e5;           /* primary button bg, links: 6.29:1 on bg */
+  --vn-accent-hover: #4338ca;     /* 7.90:1 with white text */
+  --vn-on-accent: #ffffff;        /* text on accent: 6.29:1 */
+  --vn-accent-subtle: #eef2ff;    /* recommended preset / selected row bg */
+  --vn-accent-strong: #4338ca;    /* text on accent-subtle: 7.07:1 */
+  --vn-focus: #4f46e5;            /* focus ring: 6.29:1 on bg */
+
+  --vn-danger: #b91c1c;           /* 6.47:1 on bg */
+  --vn-danger-subtle: #fef2f2;    /* danger text on it: 5.91:1 */
+  --vn-warning: #92400e;          /* text on warning-subtle: 6.84:1 */
+  --vn-warning-subtle: #fffbeb;
+  --vn-success: #15803d;          /* 5.01:1 on bg */
+  --vn-success-subtle: #f0fdf4;   /* success text on it: 4.79:1 */
+
+  /* ---------- Typography ---------- */
+  --vn-font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --vn-font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* size / line-height pairs (rem, 1rem = 16px) */
+  --vn-text-xs: 0.75rem;   --vn-leading-xs: 1rem;       /* 12/16 badges, meta only */
+  --vn-text-sm: 0.875rem;  --vn-leading-sm: 1.25rem;    /* 14/20 secondary text, notice */
+  --vn-text-base: 1rem;    --vn-leading-base: 1.5rem;   /* 16/24 body, inputs (>=16px stops iOS zoom) */
+  --vn-text-lg: 1.125rem;  --vn-leading-lg: 1.75rem;    /* 18/28 card title */
+  --vn-text-xl: 1.25rem;   --vn-leading-xl: 1.75rem;    /* 20/28 section heading */
+  --vn-text-2xl: 1.5rem;   --vn-leading-2xl: 2rem;      /* 24/32 page heading (mobile h1) */
+  --vn-text-3xl: 2rem;     --vn-leading-3xl: 2.5rem;    /* 32/40 hero mobile */
+  --vn-text-4xl: 2.75rem;  --vn-leading-4xl: 3.25rem;   /* 44/52 hero desktop */
+
+  --vn-weight-regular: 400;
+  --vn-weight-medium: 500;
+  --vn-weight-semibold: 600;
+  --vn-weight-bold: 700;
+
+  /* ---------- Spacing (4px base) ---------- */
+  --vn-space-0: 0;
+  --vn-space-1: 0.25rem;  /* 4  */
+  --vn-space-2: 0.5rem;   /* 8  */
+  --vn-space-3: 0.75rem;  /* 12 */
+  --vn-space-4: 1rem;     /* 16 */
+  --vn-space-5: 1.25rem;  /* 20 */
+  --vn-space-6: 1.5rem;   /* 24 */
+  --vn-space-8: 2rem;     /* 32 */
+  --vn-space-10: 2.5rem;  /* 40 */
+  --vn-space-12: 3rem;    /* 48 */
+  --vn-space-16: 4rem;    /* 64 */
+  --vn-space-24: 6rem;    /* 96 */
+
+  --vn-tap-min: 2.75rem;        /* 44px minimum touch target */
+  --vn-control-h: 3rem;         /* 48px buttons and inputs */
+  --vn-control-h-lg: 3.5rem;    /* 56px hero URL input + primary CTA */
+  --vn-content-max: 45rem;      /* 720px main column */
+  --vn-page-max: 72rem;         /* 1152px header/footer */
+
+  /* ---------- Radius ---------- */
+  --vn-radius-sm: 0.375rem;  /* 6  badges */
+  --vn-radius-md: 0.625rem;  /* 10 buttons, inputs, rows */
+  --vn-radius-lg: 1rem;      /* 16 cards */
+  --vn-radius-full: 9999px;  /* chips, progress bar */
+
+  /* ---------- Shadows (light) ---------- */
+  --vn-shadow-sm: 0 1px 2px rgb(15 23 42 / 0.06);
+  --vn-shadow-md: 0 2px 4px rgb(15 23 42 / 0.06), 0 4px 12px rgb(15 23 42 / 0.08);
+  --vn-shadow-lg: 0 8px 24px rgb(15 23 42 / 0.12);
+  --vn-ring: 0 0 0 2px var(--vn-bg), 0 0 0 4px var(--vn-focus); /* focus ring with offset */
+
+  /* ---------- Motion ---------- */
+  --vn-duration-fast: 120ms;
+  --vn-duration-base: 200ms;
+  --vn-ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* ---------- Colour: dark ---------- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --vn-bg: #0b1120;
+    --vn-surface: #0f172a;
+    --vn-surface-2: #1e293b;
+    --vn-text: #f1f5f9;           /* 17.29:1 on bg, 16.31 on surface, 13.35 on surface-2 */
+    --vn-text-muted: #94a3b8;     /* 7.39:1 on bg, 6.97 on surface, 5.71 on surface-2 */
+    --vn-border: #334155;         /* decorative */
+    --vn-border-strong: #64748b;  /* 3.98:1 on bg, 3.75 on surface */
+
+    --vn-accent: #818cf8;         /* links/buttons: 6.35:1 on bg, 5.99 on surface */
+    --vn-accent-hover: #a5b4fc;   /* 9.50:1 with on-accent text */
+    --vn-on-accent: #0b1120;      /* dark text on light accent: 6.35:1 */
+    --vn-accent-subtle: #1e1b4b;
+    --vn-accent-strong: #a5b4fc;  /* on accent-subtle: 8.02:1 */
+    --vn-focus: #a5b4fc;          /* 9.50:1 on bg */
+
+    --vn-danger: #f87171;         /* 6.85:1 on bg */
+    --vn-danger-subtle: #450a0a;  /* danger text on it: 5.83:1 */
+    --vn-warning: #fbbf24;        /* on warning-subtle: 8.97:1 */
+    --vn-warning-subtle: #451a03;
+    --vn-success: #4ade80;        /* 10.87:1 on bg */
+    --vn-success-subtle: #052e16; /* success text on it: 8.55:1 */
+
+    --vn-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --vn-shadow-md: 0 2px 4px rgb(0 0 0 / 0.4), 0 4px 12px rgb(0 0 0 / 0.4);
+    --vn-shadow-lg: 0 8px 24px rgb(0 0 0 / 0.5);
+  }
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --vn-duration-fast: 0ms;
+    --vn-duration-base: 0ms;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- Tailwind v4 mapping ----------
+ * Utilities: bg-bg, bg-surface, text-text, text-muted, border-border,
+ * border-strong, bg-accent, text-on-accent, ring-focus, text-danger, etc.
+ * `inline` makes utilities reference the variables, so dark mode just works.
+ */
+@theme inline {
+  --color-bg: var(--vn-bg);
+  --color-surface: var(--vn-surface);
+  --color-surface-2: var(--vn-surface-2);
+  --color-text: var(--vn-text);
+  --color-muted: var(--vn-text-muted);
+  --color-border: var(--vn-border);
+  --color-strong: var(--vn-border-strong);
+  --color-accent: var(--vn-accent);
+  --color-accent-hover: var(--vn-accent-hover);
+  --color-on-accent: var(--vn-on-accent);
+  --color-accent-subtle: var(--vn-accent-subtle);
+  --color-accent-strong: var(--vn-accent-strong);
+  --color-focus: var(--vn-focus);
+  --color-danger: var(--vn-danger);
+  --color-danger-subtle: var(--vn-danger-subtle);
+  --color-warning: var(--vn-warning);
+  --color-warning-subtle: var(--vn-warning-subtle);
+  --color-success: var(--vn-success);
+  --color-success-subtle: var(--vn-success-subtle);
+
+  --font-sans: var(--vn-font-sans);
+  --font-mono: var(--vn-font-mono);
+
+  --text-xs: var(--vn-text-xs);     --text-xs--line-height: var(--vn-leading-xs);
+  --text-sm: var(--vn-text-sm);     --text-sm--line-height: var(--vn-leading-sm);
+  --text-base: var(--vn-text-base); --text-base--line-height: var(--vn-leading-base);
+  --text-lg: var(--vn-text-lg);     --text-lg--line-height: var(--vn-leading-lg);
+  --text-xl: var(--vn-text-xl);     --text-xl--line-height: var(--vn-leading-xl);
+  --text-2xl: var(--vn-text-2xl);   --text-2xl--line-height: var(--vn-leading-2xl);
+  --text-3xl: var(--vn-text-3xl);   --text-3xl--line-height: var(--vn-leading-3xl);
+  --text-4xl: var(--vn-text-4xl);   --text-4xl--line-height: var(--vn-leading-4xl);
+
+  --radius-sm: var(--vn-radius-sm);
+  --radius-md: var(--vn-radius-md);
+  --radius-lg: var(--vn-radius-lg);
+  --radius-full: var(--vn-radius-full);
+
+  --shadow-sm: var(--vn-shadow-sm);
+  --shadow-md: var(--vn-shadow-md);
+  --shadow-lg: var(--vn-shadow-lg);
+
+  /* Tailwind's default 0.25rem spacing scale already matches --vn-space-*. */
+  --spacing-tap: var(--vn-tap-min);
+  --spacing-control: var(--vn-control-h);
+  --spacing-control-lg: var(--vn-control-h-lg);
+  --container-content: var(--vn-content-max);
+  --container-page: var(--vn-page-max);
+
+  --ease-vn: var(--vn-ease);
+}
+
+/* ---------- Base ---------- */
+html {
+  background: var(--vn-bg);
+  color: var(--vn-text);
+  font-family: var(--vn-font-sans);
+  -webkit-text-size-adjust: 100%;
+}
+:focus-visible {
+  outline: 2px solid var(--vn-focus);
+  outline-offset: 2px;
+}
+.tabular { font-variant-numeric: tabular-nums; } /* sizes, durations, progress % */

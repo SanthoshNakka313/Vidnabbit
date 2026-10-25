@@ -1,0 +1,2 @@
+This is a mock download from VidNabbit (NEXT_PUBLIC_API_MOCK=1).
+No real media was fetched.

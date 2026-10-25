@@ -1,0 +1,21 @@
+# Local dev stack for the API, hardened like production (docs/02 section 3).
+# The web app runs outside Docker: `npm run dev` in apps/web.
+#   docker compose up --build
+services:
+  api:
+    build: services/api
+    ports: ["127.0.0.1:8000:8000"]
+    environment:
+      APP_ENV: development
+      CORS_ORIGINS: http://localhost:3000
+      PUBLIC_BASE_URL: http://localhost:8000
+    read_only: true
+    tmpfs: ["/tmp:size=64m,noexec"]
+    volumes: ["work:/work"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 512
+    mem_limit: 3g
+
+volumes:
+  work:

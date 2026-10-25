@@ -1,0 +1,4 @@
+# Local runtime data (downloads, temp work dirs, takedown requests with personal data, blocklist)
+.data/
+var/
+.env

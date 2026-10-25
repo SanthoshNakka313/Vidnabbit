@@ -1,0 +1,118 @@
+"""Policy: canonical URLs, DRM denylist, blocklist file, metadata checks (docs/03 section 5)."""
+
+from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+
+import pytest
+
+from app.errors import ApiError
+from app.policy import (
+    InMemoryBlocklist,
+    JsonFileBlocklist,
+    KillSwitches,
+    Limits,
+    Policy,
+    canonicalize_url,
+    is_drm_url,
+)
+
+from .conftest import yt_like_info
+
+
+@pytest.mark.parametrize(("raw", "canonical"), [
+    ("https://www.youtube.com/watch?v=abc&utm_source=x&si=1", "https://youtube.com/watch?v=abc"),
+    ("http://m.example.com:80/a/?b=2&a=1#frag", "https://example.com/a?a=1&b=2"),
+    ("https://Example.COM./", "https://example.com/"),
+    ("https://example.com:8443/x", "https://example.com:8443/x"),
+    ("https://mobile.example.com/x?fbclid=1&gclid=2&ref=3", "https://example.com/x"),
+])
+def test_canonicalize_url(raw: str, canonical: str) -> None:
+    assert canonicalize_url(raw) == canonical
+
+
+@pytest.mark.parametrize(("url", "drm"), [
+    ("https://www.netflix.com/title/1", True), ("https://music.apple.com/x", True),
+    ("https://www.amazon.co.uk/gp/video/detail/x", True),
+    ("https://www.amazon.com/dp/B000", False), ("https://apple.com/", False),
+    ("https://notnetflix.com/", False), ("https://www.youtube.com/watch?v=x", False),
+])
+def test_is_drm_url(url: str, drm: bool) -> None:
+    assert is_drm_url(url) is drm
+
+
+def code_of(fn, *args) -> str | None:
+    try:
+        fn(*args)
+    except ApiError as e:
+        return str(e.code)
+    return None
+
+
+def test_check_info_order_and_codes() -> None:
+    bl = InMemoryBlocklist()
+    policy = Policy(bl, Limits(max_duration_seconds=600))
+    assert code_of(policy.check_info, yt_like_info()) is None
+    assert code_of(policy.check_info, yt_like_info(duration=601)) == "too_long"
+    assert code_of(policy.check_info, yt_like_info(live_status="is_upcoming")) == \
+        "live_not_supported"
+    assert code_of(policy.check_info, yt_like_info(_has_drm=True)) == "drm_protected"
+    assert code_of(policy.check_info, yt_like_info(availability="premium_only")) == \
+        "login_required"
+    # A redirect to a DRM service is caught by webpage_url even from a neutral link.
+    assert code_of(policy.check_info,
+                   yt_like_info(webpage_url="https://www.netflix.com/watch/1")) == "drm_protected"
+    bl.add_item("youtube", "abc123")
+    assert code_of(policy.check_info, yt_like_info()) == "blocked_by_rights_holder"
+
+
+def test_some_drm_formats_are_fine_but_all_is_refused() -> None:
+    policy = Policy(InMemoryBlocklist())
+    info = yt_like_info()
+    info["formats"][0]["has_drm"] = True
+    assert code_of(policy.check_info, info) is None
+    for f in info["formats"]:
+        f["has_drm"] = True
+    assert code_of(policy.check_info, info) == "drm_protected"
+
+
+def test_kill_switches() -> None:
+    policy = Policy(InMemoryBlocklist(), kill=KillSwitches(
+        disabled_extractors=frozenset({"youtube"}), disabled_domains=frozenset({"vimeo.com"})))
+    assert code_of(policy.check_url, "https://player.vimeo.com/x") == "unsupported_site"
+    assert code_of(policy.check_info, yt_like_info()) == "unsupported_site"
+
+
+def test_domain_exclusion_covers_subdomains() -> None:
+    bl = InMemoryBlocklist()
+    bl.add_domain("example.org.")
+    policy = Policy(bl)
+    assert code_of(policy.check_url, "https://media.example.org/v") == "blocked_by_rights_holder"
+    assert code_of(policy.check_url, "https://example.org.evil.test/v") is None
+
+
+def test_json_blocklist_reloads_and_survives_corruption(tmp_path: Path) -> None:
+    path = tmp_path / "bl.json"
+    bl = JsonFileBlocklist(path)
+    assert not bl.is_url_blocked(canonicalize_url("https://example.com/a"))  # missing file
+
+    path.write_text(json.dumps({"urls": ["https://www.example.com/a?utm_x=1"],
+                                "items": [{"site": "YouTube", "id": "abc"}],
+                                "domains": ["blocked.test"]}))
+    assert bl.is_url_blocked(canonicalize_url("https://example.com/a"))
+    assert bl.is_item_blocked("youtube", "abc")
+    assert bl.is_domain_excluded("cdn.blocked.test")
+
+    path.write_text("{not json")
+    os.utime(path, (1, 1))  # force a different mtime
+    assert bl.is_url_blocked(canonicalize_url("https://example.com/a"))  # last good copy kept
+
+
+def test_json_blocklist_add_urls_persists(tmp_path: Path) -> None:
+    path = tmp_path / "sub" / "bl.json"
+    JsonFileBlocklist(path).add_urls(["https://example.com/x/"])
+    fresh = JsonFileBlocklist(path)
+    assert fresh.is_url_blocked("https://example.com/x")
+    assert json.loads(path.read_text())["urls"] == ["https://example.com/x"]
