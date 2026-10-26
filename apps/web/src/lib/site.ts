@@ -27,7 +27,7 @@ export { SITE_NAME };
 export const SITE_TAGLINE = "Paste it. Nab it.";
 export const SITE_TITLE = "VidNabbit: free downloader for video, audio and images";
 export const SITE_DESCRIPTION =
-  "Save video, audio and images you own or have the right to download. Paste a public link, pick MP4, MP3, M4A or the original image, and nab it. Free, no sign-up.";
+  "Save video, audio and images you own or have the right to download. Paste a link, pick MP4, MP3, M4A or the original image, and nab it. Free, no sign-up.";
 export const SITE_LOCALE = "en_US";
 export const SOCIAL_IMAGE_ALT =
   "VidNabbit logo with the tagline: Paste it. Nab it. Save video, audio and images you own or have the right to download.";

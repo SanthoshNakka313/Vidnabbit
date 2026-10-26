@@ -50,7 +50,7 @@ const FEATURES = [
   {
     Icon: IconShield,
     title: "Fair to creators",
-    body: "Public links only. No DRM bypassing, ever, and rights holders can ask us to remove a link.",
+    body: "Only sites that allow downloading. No DRM bypassing, ever, and rights holders can ask us to remove a link.",
   },
 ];
 

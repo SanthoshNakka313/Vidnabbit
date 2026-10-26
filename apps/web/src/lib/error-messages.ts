@@ -46,8 +46,9 @@ export function friendlyError(code: ApiErrorCode, ctx: ErrorContext = {}): Frien
       };
     case "unsupported_site":
       return {
-        title: "We can't read this site yet",
-        description: "VidNabbit couldn't find downloadable media on this page.",
+        title: "This link isn't supported",
+        description:
+          "VidNabbit only works with sites that allow downloading, like the Internet Archive and Wikimedia Commons, or a direct link to a file.",
         ...tryAnother,
         tone: "warning",
         link: { href: "/supported-sites", label: "See supported sites" },

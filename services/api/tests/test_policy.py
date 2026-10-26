@@ -8,7 +8,8 @@ from pathlib import Path
 
 import pytest
 
-from app.errors import ApiError
+from app.config import Settings
+from app.errors import ApiError, ErrorCode
 from app.policy import (
     InMemoryBlocklist,
     JsonFileBlocklist,
@@ -133,3 +134,65 @@ def test_reused_extract_is_rechecked_for_item_blocks() -> None:
                    result.item_keys) == "blocked_by_rights_holder"
     # The keys survive the round trip through Redis.
     assert ExtractResult.from_dict(result.to_dict()).item_keys == result.item_keys
+
+
+# ---------------------------------------------------------------- site allowlist (Option A)
+
+ALLOWLIST = Settings(app_env="test", _env_file=None).allowed_extractor_set
+
+
+def allowlisted() -> Policy:
+    return Policy(InMemoryBlocklist(), kill=KillSwitches(allowed_extractors=ALLOWLIST))
+
+
+def test_default_allowlist_is_sites_that_permit_downloads() -> None:
+    assert {"archiveorg", "wikimedia", "jamendo", "jamendoalbum", "generic"} == ALLOWLIST
+
+
+@pytest.mark.parametrize("url", [
+    "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "https://youtu.be/dQw4w9WgXcQ",
+    "https://www.tiktok.com/@someone/video/7234567890123456789",
+    "https://www.instagram.com/p/Cabc123/",
+    "https://vimeo.com/76979871",
+    "https://x.com/someone/status/1234567890",
+])
+def test_allowlist_refuses_sites_whose_terms_forbid_downloads(url: str) -> None:
+    with pytest.raises(ApiError) as e:
+        allowlisted().check_url(url)
+    assert e.value.code == ErrorCode.UNSUPPORTED_SITE
+    assert "allow downloading" in e.value.message
+
+
+@pytest.mark.parametrize("url", [
+    "https://archive.org/details/BigBuckBunny_124",
+    "https://commons.wikimedia.org/wiki/File:Example.webm",
+    "https://www.jamendo.com/track/196219/stories-from-emona-i",
+    "https://example.org/files/my-talk.mp4",
+])
+def test_allowlist_accepts_permitted_sources(url: str) -> None:
+    allowlisted().check_url(url)
+
+
+def test_generic_needs_a_direct_file_link() -> None:
+    page = {"id": "x", "extractor_key": "Generic", "webpage_url": "https://example.org/blog"}
+    with pytest.raises(ApiError) as e:
+        allowlisted().check_info(page)
+    assert e.value.code == ErrorCode.UNSUPPORTED_SITE
+    allowlisted().check_info({**page, "direct": True, "webpage_url": "https://example.org/a.mp4"})
+
+
+def test_allowlist_applies_to_resolved_extractor_and_reuse() -> None:
+    # A permitted-looking link that resolves to YouTube is still refused.
+    info = {"id": "abc", "extractor_key": "Youtube", "webpage_url": "https://example.org/a.mp4"}
+    with pytest.raises(ApiError):
+        allowlisted().check_info(info)
+    with pytest.raises(ApiError):
+        allowlisted().check_reuse("https://archive.org/details/x", [("youtube", "abc")])
+
+
+def test_star_allows_everything_but_not_in_production() -> None:
+    assert Settings(allowed_extractors="*", _env_file=None).allowed_extractor_set is None
+    Policy(InMemoryBlocklist()).check_url("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+    with pytest.raises(ValueError, match="ALLOWED_EXTRACTORS"):
+        Settings(app_env="production", allowed_extractors="*", _env_file=None)

@@ -7,7 +7,7 @@ import { PageShell } from "@/components/PageShell";
 export const metadata: Metadata = pageMetadata({
   title: "How it works",
   description:
-    "Paste a public link, pick a format and save the file. See what happens to your download, the limits, and why some links are refused.",
+    "Paste a link from a site that allows downloading, pick a format and save the file. See what happens to your download, the limits, and why some links are refused.",
   path: "/how-it-works",
 });
 

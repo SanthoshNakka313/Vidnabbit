@@ -6,16 +6,18 @@ import { PageShell } from "@/components/PageShell";
 export const metadata: Metadata = pageMetadata({
   title: "Supported sites",
   description:
-    "Which links VidNabbit can save: public video, audio and image pages that play without signing in. What never works: DRM, logins, private and live content.",
+    "VidNabbit works with sites that allow downloading: the Internet Archive, Wikimedia Commons, Jamendo and direct file links. What never works: DRM, logins, private and live content.",
   path: "/supported-sites",
 });
 
 const WORKS = [
-  "Public videos on large video platforms (for example YouTube, Vimeo, Dailymotion), when the video plays without signing in",
-  "Public posts with video or images on social sites, when the post is visible while signed out",
-  "Public audio, such as podcasts and tracks shared openly (for example on SoundCloud or Bandcamp, when the creator allows streaming without an account)",
-  "Creative Commons and public-domain media archives (for example Wikimedia Commons, Internet Archive)",
-  "Ordinary web pages that link or embed a plain video, audio or image file",
+  { site: "Internet Archive (archive.org)", what: "public-domain and Creative Commons films, recordings and audio" },
+  { site: "Wikimedia Commons", what: "freely licensed video, audio and images" },
+  { site: "Jamendo", what: "Creative Commons music, tracks and albums" },
+  {
+    site: "Direct file links",
+    what: "a link that ends in a media file such as .mp4, .mp3 or .jpg, for example your own files on your own site",
+  },
 ];
 
 const NEVER = [
@@ -32,18 +34,26 @@ export default function SupportedSitesPage() {
     <PageShell>
       <h1>Supported sites</h1>
       <p>
-        VidNabbit works with <strong>public</strong> pages: if a video, audio track or image plays
-        or shows in a private browser window without signing in, we can usually read it. Site
-        support changes often, so the examples below are a guide, not a guarantee. We are not
+        VidNabbit only works with sites that <strong>allow downloading</strong>. Many big video and
+        social platforms don&apos;t allow it in their terms, so we don&apos;t support them, even
+        for public posts. To save your own uploads from those sites, use their own download or
+        account-export tools (see{" "}
+        <Link href="/guides/save-your-own-uploads">how to save your own uploads</Link>). We are not
         affiliated with any of these sites.
       </p>
 
-      <h2>Usually works</h2>
+      <h2>Works with</h2>
       <ul>
         {WORKS.map((w) => (
-          <li key={w}>{w}</li>
+          <li key={w.site}>
+            <strong>{w.site}</strong>: {w.what}
+          </li>
         ))}
       </ul>
+      <p>
+        We add sites once we&apos;ve checked that their terms allow downloading. Links from any
+        other site are refused.
+      </p>
 
       <h2>Never works</h2>
       <p>These limits are deliberate and we won&apos;t add workarounds:</p>

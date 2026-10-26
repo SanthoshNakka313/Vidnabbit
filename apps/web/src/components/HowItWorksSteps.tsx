@@ -3,7 +3,7 @@ import { IconClipboard, IconDownload, IconFilm } from "./icons";
 const STEPS = [
   {
     title: "Paste a link",
-    body: "Copy the address of a public page with a video, audio track or image.",
+    body: "Copy a link from a site that allows downloading, or a direct link to a file.",
     Icon: IconClipboard,
   },
   {

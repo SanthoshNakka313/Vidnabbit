@@ -84,6 +84,9 @@ Then add the custom domains `vidnabbit.com` and `www.vidnabbit.com` to the `vidn
 - Submit `https://vidnabbit.com/sitemap.xml` in Google Search Console and Bing Webmaster Tools (the launch checklist is in the private SEO plan).
 - Watch: `docker compose ... logs -f api worker smokescreen`, queue depth, R2 usage, Cloudflare analytics.
 - Backups: `docker compose ... exec backup ls -l /backups` (nightly, 14 days) plus Hetzner Backups. Test a restore before you need one.
+- Supported sites: only sites whose terms allow downloading (`ALLOWED_EXTRACTORS` in
+  services/api/app/config.py: Internet Archive, Wikimedia Commons, Jamendo, direct file links).
+  Add a site only after checking its terms (and legal review), then update the Supported sites page.
 - Updates: `git pull && docker compose -f docker-compose.prod.yml --env-file .env up -d --build`. Update yt-dlp regularly (`uv lock --upgrade-package yt-dlp` in services/api).
 
 ## Rollback

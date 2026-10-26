@@ -112,6 +112,10 @@ class Settings(BaseSettings):
     extraction_enabled: bool = True
     disabled_extractors: str = ""
     disabled_domains: str = ""
+    # Only sites whose terms allow downloading (owner decision 2026-10-25, "Option A").
+    # yt-dlp extractor keys; Generic is limited to direct file links. "*" allows every
+    # extractor and is refused in production. Widen only after legal review.
+    allowed_extractors: str = "ArchiveOrg,Wikimedia,Jamendo,JamendoAlbum,Generic"
 
     # Rate limits (per hashed client IP; IPv6 per /64)
     rate_extract_per_minute: int = 10
@@ -139,6 +143,12 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.app_env == "production"
+
+    @property
+    def allowed_extractor_set(self) -> frozenset[str] | None:
+        """Lowercased allowlist, or None for every extractor ("*")."""
+        names = _csv(self.allowed_extractors)
+        return None if "*" in names else frozenset(n.lower() for n in names)
 
     @property
     def cors_origin_list(self) -> list[str]:
@@ -199,6 +209,8 @@ class Settings(BaseSettings):
                 problems.append("DATABASE_URL is required (takedowns are legal records)")
             if self.queue_backend != "redis":
                 problems.append("QUEUE_BACKEND=redis is required (workers run downloads)")
+            if self.allowed_extractor_set is None:
+                problems.append("ALLOWED_EXTRACTORS=* is not allowed (sites must permit downloads)")
             if problems:
                 raise ValueError("Invalid production configuration: " + "; ".join(problems))
         if self.storage_backend == "r2":

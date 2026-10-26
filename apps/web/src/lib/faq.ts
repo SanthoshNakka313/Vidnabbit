@@ -19,7 +19,7 @@ export const homeFaq: FaqItem[] = [
   {
     q: "What can I download with VidNabbit?",
     a:
-      "Media you own or have the right to download: your own uploads, Creative Commons or public-domain media, and direct links to video, audio or image files. The page has to be public, so if it plays in a private browser window without signing in, we can usually read it.",
+      "Media from sites that allow downloading: the Internet Archive, Wikimedia Commons and Jamendo, plus direct links to video, audio or image files, such as your own files on your own site. Sites whose terms forbid downloading aren't supported.",
   },
   {
     q: "Which formats can I pick?",
@@ -44,7 +44,7 @@ export const homeFaq: FaqItem[] = [
   {
     q: "Why was my link refused?",
     a:
-      "We refuse DRM-protected services, private or members-only content, anything behind a sign-in or paywall, live streams, and items removed at a rights holder's request. Media over 3 hours long or files over 4 GB are refused too.",
+      "We only work with sites that allow downloading, so links from other sites are refused. We also refuse DRM-protected services, private or members-only content, anything behind a sign-in or paywall, live streams, and items removed at a rights holder's request. Media over 3 hours long or files over 4 GB are refused too.",
   },
   {
     q: "Is it legal to download videos?",

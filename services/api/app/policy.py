@@ -7,6 +7,7 @@ extraction, and a result with only DRM formats is refused (docs/03 section 5).
 
 from __future__ import annotations
 
+import functools
 import json
 import logging
 import os
@@ -53,6 +54,30 @@ DRM_PATHS: tuple[tuple[str, str], ...] = tuple(
 # yt-dlp extractor keys for DRM services (catches redirects/short links).
 DRM_EXTRACTORS: frozenset[str] = frozenset({"knowndrm", "netflix", "disneyplus", "spotify"})
 PIRACY_EXTRACTORS: frozenset[str] = frozenset({"knownpiracy"})
+
+# Generic only counts as allowed for a direct link to a media file (yt-dlp sets
+# ``direct``), never for an arbitrary page with an embedded player.
+GENERIC_EXTRACTOR = "generic"
+NOT_ALLOWED_MESSAGE = (
+    "VidNabbit only works with sites that allow downloading, like the Internet Archive and "
+    "Wikimedia Commons, or a direct link to a file. See Supported sites."
+)
+
+
+@functools.cache
+def _extractor_classes() -> tuple[Any, ...]:
+    from yt_dlp.extractor import gen_extractor_classes  # heavy; loaded on first use
+
+    return tuple(gen_extractor_classes())
+
+
+def url_extractor_key(url: str) -> str:
+    """The yt-dlp extractor that would handle ``url`` (lowercased), without any network."""
+    for ie in _extractor_classes():
+        if ie.suitable(url):
+            return str(ie.ie_key()).lower()
+    return GENERIC_EXTRACTOR
+
 
 TRACKING_PARAM_PREFIXES = ("utm_",)
 TRACKING_PARAMS = frozenset({"fbclid", "gclid", "igshid", "si", "feature", "ref", "ref_src"})
@@ -231,6 +256,8 @@ class KillSwitches:
     extraction_enabled: bool = True
     disabled_extractors: frozenset[str] = frozenset()  # lowercased extractor keys
     disabled_domains: frozenset[str] = frozenset()
+    # Lowercased extractor keys that may be used; None allows every extractor.
+    allowed_extractors: frozenset[str] | None = None
 
 
 class Policy:
@@ -260,6 +287,14 @@ class Policy:
             )
         if self.blocklist.is_url_blocked(canonicalize_url(url)):
             raise ApiError(ErrorCode.BLOCKED_BY_RIGHTS_HOLDER)
+        self._check_allowed(url_extractor_key(url))
+
+    def _check_allowed(self, extractor: str, *, direct: bool | None = None) -> None:
+        allowed = self.kill.allowed_extractors
+        if allowed is None:
+            return
+        if extractor not in allowed or (extractor == GENERIC_EXTRACTOR and direct is False):
+            raise ApiError(ErrorCode.UNSUPPORTED_SITE, NOT_ALLOWED_MESSAGE)
 
     def check_reuse(self, webpage_url: str, item_keys: Iterable[tuple[str, str]]) -> None:
         """Before reusing a cached or stored extract: a takedown may have arrived since."""
@@ -269,6 +304,7 @@ class Policy:
                 raise ApiError(ErrorCode.BLOCKED_BY_RIGHTS_HOLDER)
             if site in self.kill.disabled_extractors:
                 raise ApiError(ErrorCode.UNSUPPORTED_SITE, "This site isn't available right now.")
+            self._check_allowed(site)
 
     def check_info(self, info: Mapping[str, Any]) -> None:
         """Metadata checks after extraction and again at job start (docs/03 5.1 step 6).
@@ -292,6 +328,7 @@ class Policy:
             raise ApiError(ErrorCode.UNSUPPORTED_SITE, "This site isn't available right now.")
         if extractor in PIRACY_EXTRACTORS:
             raise ApiError(ErrorCode.UNSUPPORTED_SITE)
+        self._check_allowed(extractor or GENERIC_EXTRACTOR, direct=bool(info.get("direct")))
 
         if info.get("is_live") or info.get("live_status") in LIVE_STATUSES:
             raise ApiError(ErrorCode.LIVE_NOT_SUPPORTED)
