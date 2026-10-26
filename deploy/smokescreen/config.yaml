@@ -1,0 +1,41 @@
+# Smokescreen main config. Public destinations only: Smokescreen resolves each
+# hostname itself and checks the resolved address at connect time, so DNS
+# rebinding and redirects to private addresses fail.
+ip: 0.0.0.0
+port: 4750
+acl_file: /etc/smokescreen/acl.yaml
+# No mTLS between containers yet, so every client gets the ACL default policy.
+allow_missing_role: true
+connect_timeout: 10s
+dns_timeout: 5s
+# Explicit deny list on top of Smokescreen's built-in private-range defaults
+# (docs/03 3.4): this-network, CGNAT, IETF, benchmark, reserved, multicast,
+# metadata, and IPv6 ULA, link-local, NAT64, documentation and multicast.
+deny_ranges:
+  - 0.0.0.0/8
+  - 10.0.0.0/8
+  - 100.64.0.0/10
+  - 127.0.0.0/8
+  - 169.254.0.0/16
+  - 172.16.0.0/12
+  - 192.0.0.0/24
+  - 192.0.2.0/24
+  - 192.88.99.0/24
+  - 192.168.0.0/16
+  - 198.18.0.0/15
+  - 198.51.100.0/24
+  - 203.0.113.0/24
+  - 224.0.0.0/4
+  - 240.0.0.0/4
+  - ::/128
+  - ::1/128
+  - ::ffff:0:0/96
+  - 64:ff9b::/96
+  - 64:ff9b:1::/48
+  - 100::/64
+  - 2001:db8::/32
+  - fc00::/7
+  - fe80::/10
+  - ff00::/8
+# Bound abuse of the proxy itself.
+max_concurrent_connect_tunnels: 512

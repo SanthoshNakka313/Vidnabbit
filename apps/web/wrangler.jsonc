@@ -1,0 +1,17 @@
+{
+	// Cloudflare Workers deployment of the web app via OpenNext (@opennextjs/cloudflare).
+	// Build: npm run cf:build   Preview locally: npm run cf:preview   Deploy: npm run cf:deploy
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "vidnabbit-web",
+	"main": ".open-next/worker.js",
+	"compatibility_date": "2026-10-20",
+	// global_fetch_strictly_public: server-side fetch() can't reach private addresses.
+	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	},
+	"observability": { "enabled": true },
+	// Production: routes for vidnabbit.com are added at launch (see deploy/README.md).
+	"workers_dev": true
+}

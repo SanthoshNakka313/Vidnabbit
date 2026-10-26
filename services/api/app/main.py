@@ -438,7 +438,10 @@ def create_app(settings: Settings | None = None, *, extractor: Any | None = None
         await svc.limiter.hit(client, [Rule("extract10m", 10**9, 600)])
 
         try:
-            checked = await avalidate_url(body.url, timeout=settings.dns_timeout_seconds)
+            # With an egress proxy the API has no DNS or route out; the proxy
+            # checks the resolved address (docs/02 3.4 layer S2).
+            checked = await avalidate_url(body.url, timeout=settings.dns_timeout_seconds,
+                                          resolve=settings.egress_proxy_url is None)
         except SSRFError as e:
             log.info("extract refused reason=ssrf detail=%s", e.reason)
             raise ApiError(ErrorCode.INVALID_URL) from None

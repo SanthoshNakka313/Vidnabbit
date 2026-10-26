@@ -1,0 +1,10 @@
+# Egress ACL. The API still extracts links itself (ADR-003 moves that to
+# workers), so both need any public host: "open" here, with the IP policy in
+# config.yaml doing the enforcement. Once extraction moves to workers, give the
+# API its own instance with action: enforce and allowed_domains limited to
+# challenges.cloudflare.com and <account>.r2.cloudflarestorage.com.
+version: v1
+services: []
+default:
+  project: vidnabbit
+  action: open

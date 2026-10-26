@@ -39,7 +39,7 @@ URL = "https://www.youtube.com/watch?v=abc123"
 
 @pytest.fixture(autouse=True)
 def public_dns(monkeypatch: pytest.MonkeyPatch) -> None:
-    async def fake_avalidate(raw: str, timeout: float = 3.0):
+    async def fake_avalidate(raw: str, timeout: float = 3.0, **_: object):
         return validate_url(raw, resolver=lambda h, p: ["93.184.215.14"])
 
     monkeypatch.setattr(main_mod, "avalidate_url", fake_avalidate)

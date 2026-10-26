@@ -45,3 +45,8 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /blob-report/
+
+# Cloudflare (OpenNext / wrangler)
+/.open-next/
+/.wrangler/
+/.dev.vars*

@@ -244,3 +244,44 @@ def test_is_ssrf_block_chain() -> None:
     except RuntimeError as outer:
         assert is_ssrf_block(outer)
     assert not is_ssrf_block(ValueError("other"))
+
+
+def test_validate_without_dns_keeps_every_other_check() -> None:
+    """Behind the egress proxy the API skips DNS; syntax and literal checks remain."""
+    from app.ssrf import validate_url as v
+
+    def no_dns(host: str, port: int):
+        raise AssertionError("DNS must not be used")
+
+    ok = v("https://www.example.com/watch?v=1", no_dns, resolve=False)
+    assert ok.host == "www.example.com" and ok.addresses == ()
+    for bad in ["http://127.0.0.1/", "http://[::1]/", "http://169.254.169.254/latest",
+                "http://localhost/", "http://2130706433/", "https://example.com:8443/",
+                "file:///etc/passwd", "http://user:pw@example.com/"]:
+        with pytest.raises(SSRFError):
+            v(bad, no_dns, resolve=False)
+    assert v("https://93.184.215.14/", no_dns, resolve=False).addresses == ("93.184.215.14",)
+
+
+def test_api_skips_dns_only_when_egress_proxy_is_set(monkeypatch: pytest.MonkeyPatch) -> None:
+    from fastapi.testclient import TestClient
+
+    from app import main as main_mod
+    from app.config import Settings
+    from app.main import create_app
+    from app.ssrf import validate_url as v
+
+    from .conftest import FakeExtractor
+
+    seen: list[bool] = []
+
+    async def spy(raw: str, timeout: float = 3.0, *, resolve: bool = True):
+        seen.append(resolve)
+        return v(raw, lambda h, p: ["93.184.215.14"], resolve=resolve)
+
+    monkeypatch.setattr(main_mod, "avalidate_url", spy)
+    for proxy, expected in [(None, True), ("http://smokescreen:4750", False)]:
+        s = Settings(app_env="test", egress_proxy_url=proxy, _env_file=None)
+        with TestClient(create_app(s, extractor=FakeExtractor())) as c:
+            assert c.post("/v1/extract", json={"url": "https://example.com/v"}).status_code == 200
+        assert seen[-1] is expected

@@ -8,12 +8,14 @@ import { siteGraph } from "@/components/seo/schema";
 import {
   BRAND_BACKGROUND,
   footerGuides,
+  OG_IMAGE,
   SITE_DESCRIPTION,
   SITE_INDEXABLE,
   SITE_LOCALE,
   SITE_NAME,
   SITE_TITLE,
   SITE_URL,
+  TWITTER_IMAGE,
 } from "@/lib/site";
 import "./globals.css";
 
@@ -28,7 +30,7 @@ const nunito = Nunito({
 // SEO: defaults for every page. Pages set their own title, description and
 // canonical via pageMetadata() in src/lib/site.ts. Icons, manifest and social
 // images come from the app/ file conventions (icon.svg, apple-icon.png,
-// favicon.ico, manifest.ts, opengraph-image.tsx, twitter-image.tsx).
+// favicon.ico, manifest.ts); the social image is public/og.png.
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
@@ -46,11 +48,13 @@ export const metadata: Metadata = {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     url: "/",
+    images: [OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
+    images: [TWITTER_IMAGE],
   },
   robots: SITE_INDEXABLE
     ? {

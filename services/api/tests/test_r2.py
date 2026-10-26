@@ -165,7 +165,7 @@ def test_job_flow_with_r2(s3, settings, monkeypatch) -> None:
     from .conftest import DUMMY, FakeExtractor
     from .test_api import wait_job
 
-    async def public(raw: str, timeout: float = 3.0):
+    async def public(raw: str, timeout: float = 3.0, **_: object):
         return validate_url(raw, resolver=lambda h, p: ["93.184.215.14"])
 
     monkeypatch.setattr(main_mod, "avalidate_url", public)

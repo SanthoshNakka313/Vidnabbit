@@ -9,7 +9,9 @@ Layers implemented here (the app-level part of the defence in depth):
    dotted-quad form, so decimal (``2130706433``), hex (``0x7f000001``), octal
    (``0177.0.0.1``) and short (``127.1``) encodings are all refused.
 2. :func:`validate_url` / :func:`avalidate_url` also resolve DNS and require
-   EVERY A/AAAA answer to be public.
+   EVERY A/AAAA answer to be public. With an egress proxy configured the API runs
+   on a network with no route out, so this lookup is skipped and the proxy, which
+   resolves and checks the address itself at connect time, enforces it.
 3. :func:`install_ytdlp_guard` patches yt-dlp's connection factory so every
    connection yt-dlp opens (redirect hops, CDN/format URLs, HLS/DASH segments) is
    checked against the same rules at connect time, on the address actually
@@ -277,11 +279,19 @@ def _check_addresses(addresses: Iterable[str]) -> tuple[str, ...]:
     return addrs
 
 
-def validate_url(raw: str, resolver: Resolver = system_resolver) -> ValidatedURL:
-    """Normalise and require every resolved address to be public (blocking DNS)."""
+def validate_url(raw: str, resolver: Resolver = system_resolver, *,
+                 resolve: bool = True) -> ValidatedURL:
+    """Normalise and require every resolved address to be public (blocking DNS).
+
+    ``resolve=False`` keeps every syntax and IP-literal check but skips the DNS
+    lookup (``addresses`` is empty). Only for when an egress proxy enforces the
+    resolved-address policy and the process has no direct route or DNS out.
+    """
     n = normalize_url(raw)
     if n.literal is not None:
         addrs: tuple[str, ...] = (str(n.literal),)
+    elif not resolve:
+        addrs = ()
     else:
         try:
             resolved = list(resolver(n.host, n.port))
@@ -292,11 +302,13 @@ def validate_url(raw: str, resolver: Resolver = system_resolver) -> ValidatedURL
 
 
 async def avalidate_url(
-    raw: str, resolver: Resolver = system_resolver, timeout: float = 3.0
+    raw: str, resolver: Resolver = system_resolver, timeout: float = 3.0, *,
+    resolve: bool = True,
 ) -> ValidatedURL:
     """Async wrapper: DNS runs in a worker thread with a timeout."""
     try:
-        return await asyncio.wait_for(asyncio.to_thread(validate_url, raw, resolver), timeout)
+        return await asyncio.wait_for(
+            asyncio.to_thread(validate_url, raw, resolver, resolve=resolve), timeout)
     except TimeoutError as e:
         raise SSRFError("dns timeout") from e
 

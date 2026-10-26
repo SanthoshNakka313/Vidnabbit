@@ -1,0 +1,163 @@
+# Production stack for one Hetzner VM (docs/02 sections 3 and 8). From deploy/:
+#   docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+#
+# Networks:
+# - internal: no route to the internet (Docker `internal: true`). API, workers,
+#   Redis and Postgres live only here.
+# - egress: Smokescreen's way out. It is the ONLY bridge from internal to the
+#   internet, and it refuses private, loopback, link-local and metadata addresses.
+# - edge: Caddy's way in and out (TLS, ACME). Caddy reaches the API over internal.
+name: vidnabbit
+
+x-hardening: &hardening
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options: {max-size: "20m", max-file: "5"}  # bounded logs on disk
+
+x-app-env: &app-env
+  APP_ENV: production
+  LOG_LEVEL: INFO
+  CORS_ORIGINS: https://${SITE_DOMAIN}
+  PUBLIC_BASE_URL: https://${API_DOMAIN}
+  TRUSTED_PROXY_CIDRS: 172.31.10.2/32  # Caddy; it forwards Cloudflare's CF-Connecting-IP
+  EGRESS_PROXY_URL: http://smokescreen:4750
+  QUEUE_BACKEND: redis
+  REDIS_URL: redis://redis:6379/0
+  DATABASE_URL: postgresql://vidnabbit:${POSTGRES_PASSWORD}@postgres:5432/vidnabbit
+  STORAGE_BACKEND: r2
+  R2_ACCOUNT_ID: ${R2_ACCOUNT_ID}
+  R2_BUCKET: ${R2_BUCKET}
+  R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
+  R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
+  SIGNING_SECRET: ${SIGNING_SECRET}
+  IP_HASH_KEY_SEED: ${IP_HASH_KEY_SEED}
+  TURNSTILE_ENABLED: "true"
+  TURNSTILE_SECRET: ${TURNSTILE_SECRET}
+  TURNSTILE_EXPECTED_HOSTNAME: ${SITE_DOMAIN}
+  DATA_DIR: /work
+  WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-4}
+  EXTRACTION_ENABLED: ${EXTRACTION_ENABLED:-true}  # emergency stop: set false and `up -d`
+
+services:
+  caddy:
+    image: caddy:2.10-alpine
+    ports: ["80:80", "443:443"]
+    environment:
+      API_DOMAIN: ${API_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    tmpfs: ["/tmp:size=16m"]
+    networks:
+      edge: {}
+      internal: {ipv4_address: 172.31.10.2}
+    depends_on: [api]
+    cap_add: [NET_BIND_SERVICE]
+    <<: *hardening
+
+  smokescreen:
+    build: ./smokescreen
+    networks: [internal, egress]
+    mem_limit: 256m
+    pids_limit: 256
+    <<: *hardening
+
+  api:
+    build: ../services/api
+    environment: *app-env
+    volumes: ["work:/work"]
+    tmpfs: ["/tmp:size=256m,noexec"]
+    networks: [internal]
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_started}
+      smokescreen: {condition: service_started}
+    mem_limit: 1536m
+    pids_limit: 512
+    <<: *hardening
+
+  worker:
+    build: ../services/api
+    command: ["arq", "app.worker.WorkerSettings"]
+    environment: *app-env
+    volumes: ["work:/work"]
+    tmpfs: ["/tmp:size=256m,noexec"]
+    networks: [internal]
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_started}
+      smokescreen: {condition: service_started}
+    healthcheck: {disable: true}  # the image's check probes the API port
+    stop_grace_period: 10m  # let running downloads finish
+    mem_limit: 4g
+    pids_limit: 1024
+    <<: *hardening
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "256mb",
+              "--maxmemory-policy", "noeviction"]
+    networks: [internal]
+    mem_limit: 320m
+    <<: *hardening
+
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: vidnabbit
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: vidnabbit
+    volumes: ["pgdata:/var/lib/postgresql"]
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vidnabbit -d vidnabbit"]
+      interval: 5s
+      retries: 30
+    shm_size: 128m
+    mem_limit: 768m
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]  # entrypoint drops to postgres
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+
+  # Nightly logical backup of takedowns and the blocklist (the only data that
+  # matters, docs/02 8). Kept 14 days on the VM; enable Hetzner Backups too.
+  backup:
+    image: postgres:18-alpine
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          f=/backups/vidnabbit-$$(date -u +%Y%m%dT%H%M%SZ).sql.gz
+          pg_dump -h postgres -U vidnabbit -d vidnabbit | gzip > "$$f.tmp" && mv "$$f.tmp" "$$f"
+          find /backups -name 'vidnabbit-*.sql.gz' -mtime +14 -delete
+          sleep 86400
+        done
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes: ["pgbackups:/backups"]
+    networks: [internal]
+    depends_on:
+      postgres: {condition: service_healthy}
+    restart: unless-stopped
+
+networks:
+  internal:
+    internal: true
+    ipam:
+      config: [{subnet: 172.31.10.0/24}]
+  egress: {}
+  edge: {}
+
+volumes:
+  work:
+  pgdata:
+  pgbackups:
+  caddy-data:
+  caddy-config:
