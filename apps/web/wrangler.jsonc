@@ -12,6 +12,10 @@
 		"binding": "ASSETS"
 	},
 	"observability": { "enabled": true },
-	// Production: routes for vidnabbit.com are added at launch (see deploy/README.md).
-	"workers_dev": true
+	// www redirects to the apex with a zone redirect rule; canonical URLs use the apex.
+	"routes": [
+		{ "pattern": "vidnabbit.com", "custom_domain": true },
+		{ "pattern": "www.vidnabbit.com", "custom_domain": true }
+	],
+	"workers_dev": false
 }
