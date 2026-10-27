@@ -19,6 +19,10 @@ describe("buildCsp", () => {
     expect(prod).toContain("upgrade-insecure-requests");
   });
 
+  it("only allows same-origin workers (PDF.js)", () => {
+    expect(prod).toContain("worker-src 'self';");
+  });
+
   it("does not upgrade requests to an http API (local)", () => {
     expect(buildCsp({ nonce: "n", isDev: false, apiUrl: "http://localhost:8000" })).not.toContain(
       "upgrade-insecure-requests",

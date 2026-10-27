@@ -153,3 +153,50 @@ export const IconZap = (p: IconProps) => (
     <path d="M13 3 5 13h6l-1 8 8-10h-6l1-8Z" />
   </Icon>
 );
+
+export const IconUpload = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 15V3" />
+    <path d="m7 8 5-5 5 5" />
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+  </Icon>
+);
+
+export const IconFileText = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+    <path d="M14 2v5h6" />
+    <path d="M9 13h6" />
+    <path d="M9 17h6" />
+  </Icon>
+);
+
+export const IconTrash = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M3 6h18" />
+    <path d="M8 6V4h8v2" />
+    <path d="M19 6l-1 14H6L5 6" />
+  </Icon>
+);
+
+export const IconArrowUp = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m5 12 7-7 7 7" />
+    <path d="M12 19V5" />
+  </Icon>
+);
+
+export const IconArrowDown = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m19 12-7 7-7-7" />
+    <path d="M12 5v14" />
+  </Icon>
+);
+
+export const IconLayers = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m12 2 10 5-10 5L2 7Z" />
+    <path d="m2 17 10 5 10-5" />
+    <path d="m2 12 10 5 10-5" />
+  </Icon>
+);

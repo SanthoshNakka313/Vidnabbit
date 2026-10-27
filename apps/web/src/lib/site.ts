@@ -193,6 +193,8 @@ export const footerLinks: SiteLink[] = footerLinkGroups.flatMap((g) => g.links);
 /** Indexable routes for the sitemap, with a rough priority. */
 export const sitemapRoutes: { path: string; priority: number; changeFrequency: "weekly" | "monthly" | "yearly"; lastModified?: string }[] = [
   { path: "/", priority: 1, changeFrequency: "weekly" },
+  { path: "/convert/images", priority: 0.9, changeFrequency: "monthly" },
+  { path: "/convert/documents", priority: 0.9, changeFrequency: "monthly" },
   { path: "/how-it-works", priority: 0.8, changeFrequency: "monthly" },
   { path: "/formats", priority: 0.8, changeFrequency: "monthly" },
   { path: "/supported-sites", priority: 0.8, changeFrequency: "weekly" },

@@ -6,6 +6,8 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
   {
     title: "VidNabbit",
     links: [
+      { href: "/convert/images", label: "Image converter" },
+      { href: "/convert/documents", label: "PDF tools" },
       { href: "/how-it-works", label: "How it works" },
       { href: "/supported-sites", label: "Supported sites" },
       { href: "/faq", label: "FAQ" },

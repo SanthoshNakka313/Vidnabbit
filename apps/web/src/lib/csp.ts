@@ -24,6 +24,7 @@ export interface CspOptions {
  *   for browsers that don't support 'strict-dynamic'.
  * - img-src https: allows remote thumbnails rendered with plain <img>.
  * - connect-src allows the API origin only.
+ * - worker-src 'self': PDF.js renders PDFs in a worker served from /vendor/pdfjs.
  */
 export function buildCsp({ nonce, isDev, apiUrl }: CspOptions): string {
   const api = apiOrigin(apiUrl);
@@ -42,6 +43,7 @@ export function buildCsp({ nonce, isDev, apiUrl }: CspOptions): string {
     "connect-src": ["'self'", api, TURNSTILE_ORIGIN],
     "frame-src": [TURNSTILE_ORIGIN],
     "media-src": ["'self'"],
+    "worker-src": ["'self'"],
     "object-src": ["'none'"],
     "base-uri": ["'none'"],
     "form-action": ["'self'"],

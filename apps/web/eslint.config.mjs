@@ -21,6 +21,8 @@ const eslintConfig = defineConfig([
     // Cloudflare build output (OpenNext / wrangler).
     ".open-next/**",
     ".wrangler/**",
+    // Third-party files copied from node_modules (PDF.js worker and data).
+    "public/vendor/**",
   ]),
 ]);
 

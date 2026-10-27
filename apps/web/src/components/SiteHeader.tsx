@@ -7,10 +7,16 @@ import { IconMenu, IconX } from "./icons";
 import { Wordmark } from "./Wordmark";
 
 const NAV = [
+  { href: "/convert/images", label: "Convert", match: "/convert" },
   { href: "/how-it-works", label: "How it works" },
   { href: "/supported-sites", label: "Supported sites" },
   { href: "/faq", label: "FAQ" },
 ];
+
+/** "Convert" stays highlighted on both converter pages. */
+function isCurrent(pathname: string, item: { href: string; match?: string }) {
+  return item.match ? pathname.startsWith(item.match) : pathname === item.href;
+}
 
 const navLink =
   "inline-flex items-center min-h-tap px-3.5 rounded-full font-bold text-text/80 transition-colors " +
@@ -44,7 +50,7 @@ export function SiteHeader() {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  aria-current={pathname === item.href ? "page" : undefined}
+                  aria-current={isCurrent(pathname, item) ? "page" : undefined}
                   className={navLink}
                 >
                   {item.label}
@@ -86,7 +92,7 @@ export function SiteHeader() {
             <li key={item.href}>
               <Link
                 href={item.href}
-                aria-current={pathname === item.href ? "page" : undefined}
+                aria-current={isCurrent(pathname, item) ? "page" : undefined}
                 className={`${navLink} w-full`}
                 onClick={() => setOpen(false)}
               >
