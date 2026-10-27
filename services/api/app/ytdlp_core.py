@@ -312,7 +312,8 @@ def safe_selector(ydl: Any, spec: str) -> Callable[[dict[str, Any]], Iterator[di
 _FORMAT_KEYS = ("format_id", "ext", "vcodec", "acodec", "width", "height", "fps", "abr", "tbr",
                 "filesize", "filesize_approx", "has_drm", "protocol", "duration")
 _INFO_KEYS = ("id", "_type", "extractor_key", "ie_key", "availability", "live_status",
-              "is_live", "_has_drm", "duration", "width", "height", "ext", "direct")
+              "is_live", "_has_drm", "duration", "width", "height", "ext", "direct",
+              "license")
 
 
 def slim_format(f: Mapping[str, Any]) -> dict[str, Any]:

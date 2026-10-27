@@ -14,6 +14,7 @@ class ErrorCode(StrEnum):
     INVALID_URL = "invalid_url"
     UNSUPPORTED_SITE = "unsupported_site"
     DRM_PROTECTED = "drm_protected"
+    LICENSE_REQUIRED = "license_required"  # site where only Creative Commons media is allowed
     LOGIN_REQUIRED = "login_required"
     PRIVATE_CONTENT = "private_content"
     BLOCKED_BY_RIGHTS_HOLDER = "blocked_by_rights_holder"
@@ -35,6 +36,7 @@ HTTP_STATUS: dict[ErrorCode, int] = {
     ErrorCode.INVALID_REQUEST: 400,
     ErrorCode.UNSUPPORTED_SITE: 422,
     ErrorCode.DRM_PROTECTED: 422,
+    ErrorCode.LICENSE_REQUIRED: 422,
     ErrorCode.LOGIN_REQUIRED: 422,
     ErrorCode.PRIVATE_CONTENT: 422,
     ErrorCode.LIVE_NOT_SUPPORTED: 422,
@@ -53,6 +55,7 @@ DEFAULT_MESSAGES: dict[ErrorCode, str] = {
     ErrorCode.INVALID_REQUEST: "The request was malformed.",
     ErrorCode.UNSUPPORTED_SITE: "We couldn't find downloadable media at that link.",
     ErrorCode.DRM_PROTECTED: "This content is DRM-protected, so we can't download it.",
+    ErrorCode.LICENSE_REQUIRED: "On this site we only save videos with a Creative Commons licence.",
     ErrorCode.LOGIN_REQUIRED: (
         "This content needs a login or subscription, so we can't download it."
     ),

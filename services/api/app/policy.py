@@ -76,6 +76,11 @@ def url_extractor_key(url: str) -> str:
     return GENERIC_EXTRACTOR
 
 
+def is_creative_commons(info: Mapping[str, Any]) -> bool:
+    """yt-dlp's ``license``, e.g. "Creative Commons Attribution license (reuse allowed)"."""
+    return "creative commons" in str(info.get("license") or "").lower()
+
+
 TRACKING_PARAM_PREFIXES = ("utm_",)
 TRACKING_PARAMS = frozenset({"fbclid", "gclid", "igshid", "si", "feature", "ref", "ref_src"})
 LIVE_STATUSES = frozenset({"is_live", "is_upcoming", "post_live"})
@@ -255,6 +260,8 @@ class KillSwitches:
     disabled_domains: frozenset[str] = frozenset()
     # Lowercased extractor keys that may be used; None allows every extractor.
     allowed_extractors: frozenset[str] | None = None
+    # Extractors whose media must carry a Creative Commons licence (yt-dlp ``license``).
+    cc_only_extractors: frozenset[str] = frozenset()
 
 
 class Policy:
@@ -326,6 +333,8 @@ class Policy:
         if extractor in PIRACY_EXTRACTORS:
             raise ApiError(ErrorCode.UNSUPPORTED_SITE)
         self._check_allowed(extractor or GENERIC_EXTRACTOR, direct=bool(info.get("direct")))
+        if extractor in self.kill.cc_only_extractors and not is_creative_commons(info):
+            raise ApiError(ErrorCode.LICENSE_REQUIRED)
 
         if info.get("is_live") or info.get("live_status") in LIVE_STATUSES:
             raise ApiError(ErrorCode.LIVE_NOT_SUPPORTED)

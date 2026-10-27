@@ -209,3 +209,41 @@ def test_every_site_still_refuses_drm_and_piracy() -> None:
     assert e.value.code == ErrorCode.DRM_PROTECTED
     with pytest.raises(ApiError):
         policy.check_info({"id": "x", "extractor_key": "KnownPiracy"})
+
+
+# ---------------------------------------------------------------- Creative Commons only (YouTube)
+
+def cc_policy() -> Policy:
+    return Policy(InMemoryBlocklist(), kill=KillSwitches(
+        cc_only_extractors=Settings(_env_file=None).cc_only_extractor_set))
+
+
+def test_youtube_is_creative_commons_only_by_default() -> None:
+    assert Settings(_env_file=None).cc_only_extractor_set == {"youtube"}
+
+
+def test_youtube_standard_licence_is_refused() -> None:
+    with pytest.raises(ApiError) as e:
+        cc_policy().check_info(yt_like_info(license=None))  # None = standard YouTube licence
+    assert e.value.code == ErrorCode.LICENSE_REQUIRED
+
+
+def test_youtube_creative_commons_is_allowed() -> None:
+    cc_policy().check_info(yt_like_info())  # the fixture is CC-BY
+
+
+def test_cc_rule_only_applies_to_listed_sites() -> None:
+    cc_policy().check_info(yt_like_info(extractor_key="Dailymotion",
+                                        webpage_url="https://www.dailymotion.com/video/x1"))
+
+
+def test_cc_rule_applies_to_every_gallery_entry() -> None:
+    from app.extractor import FormatSelector, result_from_info
+
+    cc = yt_like_info()
+    playlist = {"_type": "playlist", "id": "p", "extractor_key": "Youtube",
+                "license": cc["license"], "webpage_url": "https://www.youtube.com/watch?v=abc123",
+                "entries": [cc, yt_like_info(id="std", license=None)]}
+    with pytest.raises(ApiError) as e:
+        result_from_info(playlist, playlist["webpage_url"], cc_policy(), FormatSelector())
+    assert e.value.code == ErrorCode.LICENSE_REQUIRED

@@ -39,10 +39,12 @@ for (const [path, heading] of [
   });
 }
 
-test("legal drafts are clearly marked", async ({ page }) => {
-  for (const path of ["/terms", "/privacy"]) {
+test("legal pages are dated, have a contact and no draft text", async ({ page }) => {
+  for (const path of ["/terms", "/privacy", "/copyright"]) {
     await page.goto(path);
-    await expect(page.getByText("Draft — needs legal review")).toBeVisible();
+    await expect(page.getByText(/Last updated: \d+ \w+ \d{4}/)).toBeVisible();
+    await expect(page.getByRole("link", { name: "abuse@vidnabbit.com" }).first()).toBeVisible();
+    await expect(page.getByText(/draft|placeholder/i)).toHaveCount(0);
   }
 });
 

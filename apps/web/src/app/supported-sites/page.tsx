@@ -6,12 +6,12 @@ import { PageShell } from "@/components/PageShell";
 export const metadata: Metadata = pageMetadata({
   title: "Supported sites",
   description:
-    "VidNabbit saves public video, audio and images from YouTube, Instagram and thousands of other sites. What never works: DRM, logins, private and live content.",
+    "VidNabbit saves public video, audio and images from thousands of sites, including Creative Commons videos on YouTube. What never works: DRM, logins, private and live content.",
   path: "/supported-sites",
 });
 
 const WORKS = [
-  { site: "YouTube", what: "public videos and Shorts that play without signing in (one video at a time, not channels or playlists)" },
+  { site: "YouTube", what: "Creative Commons videos only: public videos the creator has licensed for reuse (one video at a time, not channels or playlists)" },
   { site: "Instagram", what: "public posts and reels that show while signed out. Instagram hides a lot from signed-out visitors, so many links won't work" },
   { site: "Other video, audio and social sites", what: "public pages that play without signing in, on thousands of sites" },
   { site: "Media archives", what: "Creative Commons and public-domain collections such as the Internet Archive and Wikimedia Commons" },
@@ -53,6 +53,14 @@ export default function SupportedSitesPage() {
       </ul>
       <p>
         Site support changes often, so this list is a guide, not a guarantee.
+      </p>
+
+      <h2 id="youtube-creative-commons">Finding Creative Commons videos on YouTube</h2>
+      <p>
+        On YouTube we only save videos licensed under Creative Commons. To find them, search on
+        YouTube, open <strong>Filters</strong> and choose <strong>Creative Commons</strong>. On a
+        video, the licence is shown at the bottom of the description. Creative Commons usually
+        asks you to credit the creator when you reuse the video.
       </p>
 
       <h2>Never works</h2>

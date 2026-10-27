@@ -19,7 +19,7 @@ export const homeFaq: FaqItem[] = [
   {
     q: "What can I download with VidNabbit?",
     a:
-      "Media you own or have the right to download, from public links on YouTube, Instagram and thousands of other sites, plus direct links to video, audio or image files. The link has to be public: if it plays in a private browser window without signing in, we can usually read it.",
+      "Media you own or have the right to download, from public links on thousands of sites (on YouTube, Creative Commons videos only), plus direct links to video, audio or image files. The link has to be public: if it plays in a private browser window without signing in, we can usually read it.",
   },
   {
     q: "Which formats can I pick?",

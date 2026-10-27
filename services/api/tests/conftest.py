@@ -44,6 +44,7 @@ def yt_like_info(**over: Any) -> dict[str, Any]:
         "id": "abc123", "extractor_key": "Youtube", "title": "A CC video",
         "uploader": "Someone", "duration": 213, "availability": "public",
         "live_status": "not_live", "webpage_url": "https://www.youtube.com/watch?v=abc123",
+        "license": "Creative Commons Attribution license (reuse allowed)",
         "thumbnail": "https://i.ytimg.com/vi/abc123/hq.jpg", "formats": fmts,
     }
     info.update(over)

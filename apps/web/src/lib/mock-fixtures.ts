@@ -207,6 +207,10 @@ export const errorFixtures: Record<ContractErrorCode, ErrorFixture> = {
     status: 451,
     body: { error: { code: "drm_protected", message: "This content is DRM-protected and cannot be downloaded." } },
   },
+  license_required: {
+    status: 422,
+    body: { error: { code: "license_required", message: "On this site we only save videos with a Creative Commons licence." } },
+  },
   login_required: {
     status: 403,
     body: { error: { code: "login_required", message: "This content requires signing in." } },

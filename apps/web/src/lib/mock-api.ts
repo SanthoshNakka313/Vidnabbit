@@ -43,6 +43,7 @@ const PATH_KEYWORDS: [string, ContractErrorCode][] = [
   ["private", "private_content"],
   ["login", "login_required"],
   ["drm", "drm_protected"],
+  ["not-cc", "license_required"],
   ["blocked", "blocked_by_rights_holder"],
   ["too-long", "too_long"],
   ["too-large", "too_large"],

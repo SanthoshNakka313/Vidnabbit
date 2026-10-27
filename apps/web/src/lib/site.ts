@@ -29,6 +29,10 @@ export const SITE_TITLE = "VidNabbit: free downloader for video, audio and image
 export const SITE_DESCRIPTION =
   "Save video, audio and images you own or have the right to download. Paste a link, pick MP4, MP3, M4A or the original image, and nab it. Free, no sign-up.";
 export const SITE_LOCALE = "en_US";
+/** Public contact for legal, privacy and abuse (forwarded by Cloudflare Email Routing). */
+export const CONTACT_EMAIL = "abuse@vidnabbit.com";
+/** Shown as "Last updated" on the Terms, Privacy and Copyright pages. */
+export const LEGAL_UPDATED = "27 October 2026";
 export const SOCIAL_IMAGE_ALT =
   "VidNabbit logo with the tagline: Paste it. Nab it. Save video, audio and images you own or have the right to download.";
 /**

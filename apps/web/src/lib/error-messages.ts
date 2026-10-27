@@ -63,6 +63,16 @@ export function friendlyError(code: ApiErrorCode, ctx: ErrorContext = {}): Frien
         tone: "info",
         link: { href: "/supported-sites", label: "What VidNabbit can't download" },
       };
+    case "license_required":
+      return {
+        title: "Only Creative Commons videos",
+        description: site
+          ? `On ${site}, VidNabbit only saves videos the creator has published under a Creative Commons licence. This one uses the standard licence.`
+          : "On this site, VidNabbit only saves videos the creator has published under a Creative Commons licence. This one uses the standard licence.",
+        ...tryAnother,
+        tone: "info",
+        link: { href: "/supported-sites", label: "How to find Creative Commons videos" },
+      };
     case "login_required":
       return {
         title: "This needs a sign-in",

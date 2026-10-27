@@ -4,6 +4,7 @@ export const API_ERROR_CODES = [
   "invalid_url",
   "unsupported_site",
   "drm_protected",
+  "license_required",
   "login_required",
   "private_content",
   "blocked_by_rights_holder",

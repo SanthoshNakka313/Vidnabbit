@@ -114,6 +114,8 @@ services:
     image: redis:7.4-alpine
     command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "96mb",
               "--maxmemory-policy", "noeviction"]
+    user: "999:999"  # the image's redis user; avoids the entrypoint's setpriv (needs SETUID)
+    tmpfs: ["/data:size=16m,uid=999,gid=999"]
     networks: [internal]
     mem_limit: 128m
     <<: *hardening
@@ -162,8 +164,12 @@ networks:
   internal:
     internal: true
     ipam:
-      config: [{subnet: 172.31.10.0/24}]
-  egress: {}
+      # Dynamic addresses come from the upper half, so Caddy's fixed .2 is never taken.
+      config: [{subnet: 172.31.10.0/24, ip_range: 172.31.10.128/25}]
+  egress:
+    enable_ipv6: true  # many sites prefer IPv6; Smokescreen dials what DNS returns
+    ipam:
+      config: [{subnet: 172.31.20.0/24}, {subnet: "fd7a:7b1d:0:20::/64"}]
   edge: {}
 
 volumes:

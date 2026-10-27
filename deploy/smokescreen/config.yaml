@@ -11,6 +11,8 @@ dns_timeout: 5s
 # Explicit deny list on top of Smokescreen's built-in private-range defaults
 # (docs/03 3.4): this-network, CGNAT, IETF, benchmark, reserved, multicast,
 # metadata, and IPv6 ULA, link-local, NAT64, documentation and multicast.
+# Not ::ffff:0:0/96: Smokescreen matches IPv4 addresses in their mapped form, so that
+# range would deny every IPv4 destination.
 deny_ranges:
   - 0.0.0.0/8
   - 10.0.0.0/8
@@ -29,7 +31,6 @@ deny_ranges:
   - 240.0.0.0/4
   - ::/128
   - ::1/128
-  - ::ffff:0:0/96
   - 64:ff9b::/96
   - 64:ff9b:1::/48
   - 100::/64

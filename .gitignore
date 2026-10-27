@@ -22,3 +22,6 @@ playwright-report/
 /docs/0*.md
 /.git-private/
 /apps/web/SEO.md
+
+# Cloudflare CLI local cache (account details)
+/.cloudflare/

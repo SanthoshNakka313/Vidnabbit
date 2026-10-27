@@ -117,6 +117,8 @@ class Settings(BaseSettings):
     # comma-separated list of yt-dlp extractor keys to restrict sites; with a list,
     # Generic is limited to direct file links.
     allowed_extractors: str = "*"
+    # Sites where only Creative Commons media may be saved (owner decision 2026-10-27).
+    cc_only_extractors: str = "Youtube"
 
     # Rate limits (per hashed client IP; IPv6 per /64)
     rate_extract_per_minute: int = 10
@@ -150,6 +152,10 @@ class Settings(BaseSettings):
         """Lowercased allowlist, or None for every extractor ("*")."""
         names = _csv(self.allowed_extractors)
         return None if "*" in names else frozenset(n.lower() for n in names)
+
+    @property
+    def cc_only_extractor_set(self) -> frozenset[str]:
+        return frozenset(n.lower() for n in _csv(self.cc_only_extractors))
 
     @property
     def cors_origin_list(self) -> list[str]:

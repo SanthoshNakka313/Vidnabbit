@@ -236,6 +236,7 @@ def build_policy(settings: Settings,
             disabled_domains=frozenset(
                 s.strip().lower() for s in settings.disabled_domains.split(",") if s.strip()),
             allowed_extractors=settings.allowed_extractor_set,
+            cc_only_extractors=settings.cc_only_extractor_set,
         ),
     )
 
