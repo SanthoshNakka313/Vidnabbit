@@ -1,4 +1,7 @@
-# Production stack for one Hetzner VM (docs/02 sections 3 and 8). From deploy/:
+# Production stack for one Hetzner VM (docs/02 sections 3 and 8). Sized for a CX23
+# (2 vCPU, 4 GB): the API keeps CPU priority so link lookups stay fast while the
+# workers convert video. On a bigger server raise WORKER_CONCURRENCY,
+# EXTRACT_MAX_CONCURRENCY and the *_MEM/*_CPUS values in .env. From deploy/:
 #   docker compose -f docker-compose.prod.yml --env-file .env up -d --build
 #
 # Networks:
@@ -39,7 +42,8 @@ x-app-env: &app-env
   TURNSTILE_SECRET: ${TURNSTILE_SECRET}
   TURNSTILE_EXPECTED_HOSTNAME: ${SITE_DOMAIN}
   DATA_DIR: /work
-  WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-4}
+  WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-2}  # downloads at once per worker
+  EXTRACT_MAX_CONCURRENCY: ${EXTRACT_MAX_CONCURRENCY:-4}  # link lookups at once (~150 MB each)
   EXTRACTION_ENABLED: ${EXTRACTION_ENABLED:-true}  # emergency stop: set false and `up -d`
   DISABLED_EXTRACTORS: ${DISABLED_EXTRACTORS:-}  # e.g. Instagram  (switch a site off)
   DISABLED_DOMAINS: ${DISABLED_DOMAINS:-}
@@ -57,6 +61,7 @@ services:
       - caddy-data:/data
       - caddy-config:/config
     tmpfs: ["/tmp:size=16m"]
+    mem_limit: 128m
     networks:
       edge: {}
       internal: {ipv4_address: 172.31.10.2}
@@ -67,7 +72,7 @@ services:
   smokescreen:
     build: ./smokescreen
     networks: [internal, egress]
-    mem_limit: 256m
+    mem_limit: 128m
     pids_limit: 256
     <<: *hardening
 
@@ -81,7 +86,8 @@ services:
       postgres: {condition: service_healthy}
       redis: {condition: service_started}
       smokescreen: {condition: service_started}
-    mem_limit: 1536m
+    mem_limit: ${API_MEM:-1g}
+    cpu_shares: 2048  # wins CPU over the workers when both are busy
     pids_limit: 512
     <<: *hardening
 
@@ -98,16 +104,18 @@ services:
       smokescreen: {condition: service_started}
     healthcheck: {disable: true}  # the image's check probes the API port
     stop_grace_period: 10m  # let running downloads finish
-    mem_limit: 4g
+    mem_limit: ${WORKER_MEM:-1536m}
+    cpus: ${WORKER_CPUS:-1.5}  # leave headroom for the API
+    cpu_shares: 512
     pids_limit: 1024
     <<: *hardening
 
   redis:
     image: redis:7.4-alpine
-    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "256mb",
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "96mb",
               "--maxmemory-policy", "noeviction"]
     networks: [internal]
-    mem_limit: 320m
+    mem_limit: 128m
     <<: *hardening
 
   postgres:
@@ -122,8 +130,8 @@ services:
       test: ["CMD-SHELL", "pg_isready -U vidnabbit -d vidnabbit"]
       interval: 5s
       retries: 30
-    shm_size: 128m
-    mem_limit: 768m
+    shm_size: 64m
+    mem_limit: 384m
     cap_drop: [ALL]
     cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]  # entrypoint drops to postgres
     security_opt: ["no-new-privileges:true"]
