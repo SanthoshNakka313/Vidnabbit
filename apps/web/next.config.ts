@@ -49,6 +49,16 @@ const nextConfig: NextConfig = {
       // The home page hosts the result and download views: send no referrer
       // at all from there (docs/03 §2.11). Later rules override earlier ones.
       { source: "/", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] },
+      // Converter pages are cross-origin isolated so LibRaw (camera RAW) can use
+      // threads. They load nothing from other sites, so nothing breaks. Workers
+      // they start must send the same header. On Cloudflare, static files get
+      // these from public/_headers instead.
+      ...["/convert/:path*", "/vendor/:path*", "/frames/:path*", "/_next/static/:path*"].map((source) => ({
+        source,
+        headers: [{ key: "Cross-Origin-Embedder-Policy", value: "require-corp" }],
+      })),
+      // The Word converter renders documents in a same-origin frame (public/frames).
+      { source: "/frames/:path*", headers: [{ key: "X-Frame-Options", value: "SAMEORIGIN" }] },
     ];
   },
 };

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { fitWithin, outputName, pngToIco } from "./image";
+import { outputName } from "./image";
+import { fitWithin } from "./raster";
+import { pngToIco } from "./writers";
 import { PAGE_SIZES, placeOnPage } from "./pdf";
 import { uniqueName } from "./zip";
 
@@ -65,5 +67,59 @@ describe("uniqueName", () => {
     expect(uniqueName("a.png", { "a.png": 1 })).toBe("a (2).png");
     expect(uniqueName("a.png", { "a.png": 1, "a (2).png": 1 })).toBe("a (3).png");
     expect(uniqueName("notes", { notes: 1 })).toBe("notes (2)");
+  });
+});
+
+describe("rgbaToBmp", () => {
+  it("writes a bottom-up 24-bit BMP with padded rows", async () => {
+    const { rgbaToBmp } = await import("./writers");
+    // 3x2: top row red, bottom row blue
+    const red = [255, 0, 0, 255];
+    const blue = [0, 0, 255, 255];
+    const px = new Uint8Array([...red, ...red, ...red, ...blue, ...blue, ...blue]);
+    const bmp = rgbaToBmp(px, 3, 2);
+    const v = new DataView(bmp.buffer);
+    expect(String.fromCharCode(bmp[0], bmp[1])).toBe("BM");
+    expect(v.getUint32(2, true)).toBe(bmp.length);
+    expect(v.getUint16(28, true)).toBe(24);
+    const rowSize = 12; // 9 bytes padded to 12
+    expect(bmp.length).toBe(54 + rowSize * 2);
+    expect(Array.from(bmp.slice(54, 57))).toEqual([255, 0, 0]); // first stored row = bottom (blue), BGR
+    expect(Array.from(bmp.slice(54 + rowSize, 57 + rowSize))).toEqual([0, 0, 255]); // top row red, BGR
+  });
+});
+
+describe("ascii85 and EPS", () => {
+  it("encodes like the reference implementation", async () => {
+    const { ascii85 } = await import("./writers");
+    expect(ascii85(new TextEncoder().encode("Man "))).toBe("9jqo^~>");
+    expect(ascii85(new Uint8Array([0, 0, 0, 0]))).toBe("z~>");
+    expect(ascii85(new Uint8Array([0xff]))).toBe("rr~>");
+  });
+
+  it("writes an EPS header with the image size", async () => {
+    const { jpegToEps } = await import("./writers");
+    const eps = jpegToEps(new Uint8Array([0xff, 0xd8, 0xff, 0xd9]), 120, 80, "a (b).jpg");
+    expect(eps.startsWith("%!PS-Adobe-3.0 EPSF-3.0\n%%BoundingBox: 0 0 120 80\n")).toBe(true);
+    expect(eps).toContain("%%Title: (a _b_.jpg)");
+    expect(eps).toContain("/DCTDecode filter");
+    expect(eps.trimEnd().endsWith("%%EOF")).toBe(true);
+  });
+});
+
+describe("detectInput", () => {
+  const bytes = (s: string, prefix: number[] = []) => new Uint8Array([...prefix, ...Array.from(s, (c) => c.charCodeAt(0))]);
+
+  it("trusts the file's bytes over its name", async () => {
+    const { detectInput } = await import("./formats");
+    expect(detectInput(bytes("ftypheic", [0, 0, 0, 24]), "photo.jpg")).toBe("heic");
+    expect(detectInput(bytes("ftypavif", [0, 0, 0, 24]), "x.png")).toBe("avif");
+    expect(detectInput(bytes("ftypcrx ", [0, 0, 0, 24]), "IMG.CR3")).toBe("raw");
+    expect(detectInput(new Uint8Array([0xff, 0x0a, 0, 0]), "a.bin")).toBe("jxl");
+    expect(detectInput(bytes("%PDF-1.7"), "logo.ai")).toBe("pdf");
+    expect(detectInput(bytes("%!PS-Adobe-3.0 EPSF-3.0"), "a.eps")).toBe("eps");
+    expect(detectInput(new Uint8Array([0x49, 0x49, 0x2a, 0]), "scan.tif")).toBe("tiff");
+    expect(detectInput(new Uint8Array([0x49, 0x49, 0x2a, 0]), "DSC_1.NEF")).toBe("raw");
+    expect(detectInput(new Uint8Array([0xff, 0xd8, 0xff]), "a.jpg")).toBe("native");
   });
 });

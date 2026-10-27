@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- Renders a Word document for the converter. No scripts may run here; the
+     converter page fills this frame from outside. Styles, fonts and images
+     come only from the document itself (inline or blob:). -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' blob:; font-src blob: data:; img-src blob: data:; frame-src 'self' about:; base-uri 'none'; form-action 'none'">
+<title>Document</title>
+<style>
+  html, body { margin: 0; background: #fff; }
+  @page { margin: 0; }
+  @media print {
+    .docx-wrapper { background: none !important; padding: 0 !important; }
+    section.docx { box-shadow: none !important; margin: 0 !important; break-after: page; }
+    section.docx:last-child { break-after: auto; }
+  }
+</style>
+</head>
+<body></body>
+</html>

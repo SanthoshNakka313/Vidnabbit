@@ -1,15 +1,8 @@
 "use client";
 
-import { useId, useRef, useState, useSyncExternalStore } from "react";
-import {
-  ConvertError,
-  IMAGE_ACCEPT,
-  OUTPUT_FORMATS,
-  canEncode,
-  convertImage,
-  formatById,
-  type ImageOutput,
-} from "@/lib/convert/image";
+import { useId, useRef, useState } from "react";
+import { INPUT_LABEL, INPUT_ONLY } from "@/lib/convert/formats";
+import { ConvertError, IMAGE_ACCEPT, OUTPUT_FORMATS, convertImage, formatById, type ImageOutput } from "@/lib/convert/image";
 import { buttonGhost, inputBase } from "../ui/styles";
 import { FileDrop } from "./FileDrop";
 import { ResultList, type ResultItem } from "./ResultList";
@@ -24,23 +17,11 @@ const SIZES: { value: string; label: string }[] = [
 ];
 const MAX_FILES = 50;
 
-// AVIF (and on old browsers WebP) encoding isn't everywhere; formats this browser
-// can't save are hidden. Checked once, on the client only.
-let unsupportedCache: string | null = null;
-const noSubscribe = () => () => {};
-function unsupportedFormats(): string {
-  unsupportedCache ??= OUTPUT_FORMATS.filter((f) => !canEncode(f)).map((f) => f.id).join(",");
-  return unsupportedCache;
-}
-
 export function ImageConverter({ initialFormat = "jpeg" }: { initialFormat?: ImageOutput }) {
-  const [chosen, setFormat] = useState<ImageOutput>(initialFormat);
+  const [format, setFormat] = useState<ImageOutput>(initialFormat);
   const [quality, setQuality] = useState(90);
   const [maxSide, setMaxSide] = useState("");
   const [items, setItems] = useState<ResultItem[]>([]);
-  const unsupportedList = useSyncExternalStore(noSubscribe, unsupportedFormats, () => "");
-  const unsupported = new Set(unsupportedList.split(",").filter(Boolean));
-  const format: ImageOutput = unsupported.has(chosen) ? "png" : chosen;
   const seq = useRef(0);
   const ids = { format: useId(), quality: useId(), size: useId() };
 
@@ -59,8 +40,12 @@ export function ImageConverter({ initialFormat = "jpeg" }: { initialFormat?: Ima
         const out = await convertImage(file, opts);
         update = {
           status: "done",
-          preview: format !== "ico",
-          output: { name: out.name, blob: out.blob, detail: `${out.width}×${out.height}` },
+          preview: !["ico", "tiff", "eps", "jxl"].includes(format),
+          output: {
+            name: out.name,
+            blob: out.blob,
+            detail: `${out.width}×${out.height}${out.frames > 1 ? ` · ${out.frames} frames` : ""}`,
+          },
         };
       } catch (e) {
         update = { status: "error", error: e instanceof ConvertError ? e.message : "This file couldn't be converted." };
@@ -82,7 +67,7 @@ export function ImageConverter({ initialFormat = "jpeg" }: { initialFormat?: Ima
             onChange={(e) => setFormat(e.target.value as ImageOutput)}
             className={`${inputBase} h-control`}
           >
-            {OUTPUT_FORMATS.filter((f) => !unsupported.has(f.id)).map((f) => (
+            {OUTPUT_FORMATS.map((f) => (
               <option key={f.id} value={f.id}>
                 {f.label}
               </option>
@@ -129,17 +114,26 @@ export function ImageConverter({ initialFormat = "jpeg" }: { initialFormat?: Ima
           </select>
         </div>
       </div>
-      {fmt.opaque && <p className="-mt-2 text-sm text-muted">JPG has no transparency, so transparent areas become white.</p>}
-      {format === "ico" && <p className="-mt-2 text-sm text-muted">Favicons are at most 256×256 px.</p>}
+      {fmt.note && <p className="-mt-2 text-sm text-muted">{fmt.note}</p>}
 
       <FileDrop
         accept={IMAGE_ACCEPT}
-        hint="PNG, JPG, WebP, AVIF, GIF, BMP, SVG, ICO (HEIC in Safari). Up to 50 files, 50 MB each."
+        hint={`Opens ${INPUT_LABEL}. Up to 50 files, 100 MB each.`}
         buttonLabel="Choose images"
         onFiles={add}
       />
 
       <ResultList items={items} zipName={`vidnabbit-${fmt.ext}-images.zip`} />
+      <div className="text-sm text-muted">
+        <p className="font-bold text-text">These open here but can&apos;t be saved:</p>
+        <ul className="mt-1 list-disc pl-5">
+          {INPUT_ONLY.map((f) => (
+            <li key={f.label}>
+              <strong>{f.label}</strong>: {f.why}
+            </li>
+          ))}
+        </ul>
+      </div>
       {items.length > 0 && (
         <button type="button" className={`${buttonGhost} self-center`} onClick={() => setItems([])}>
           Clear list

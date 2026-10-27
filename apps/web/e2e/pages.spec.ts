@@ -5,7 +5,7 @@ test("security headers and nonce CSP are sent", async ({ request }) => {
   const h = res.headers();
   const csp = h["content-security-policy"];
   expect(csp).toMatch(/script-src 'self' 'nonce-[A-Za-z0-9+/=]+' 'strict-dynamic' https:\/\/challenges\.cloudflare\.com/);
-  expect(csp).toContain("frame-src https://challenges.cloudflare.com");
+  expect(csp).toContain("frame-src 'self' https://challenges.cloudflare.com");
   expect(csp).toContain("img-src 'self' blob: data: https:");
   expect(csp).toContain("connect-src 'self' http://localhost:8000");
   expect(csp).toContain("object-src 'none'");

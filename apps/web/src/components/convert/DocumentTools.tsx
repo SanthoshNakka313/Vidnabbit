@@ -1,17 +1,21 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
+import { INPUT_LABEL } from "@/lib/convert/formats";
 import { ConvertError, IMAGE_ACCEPT, outputName } from "@/lib/convert/image";
 import { imagesToPdf, mergePdfs, pdfToImages, type PageSize } from "@/lib/convert/pdf";
+import { WORD_ACCEPT, pdfToWord, printWord, wordToPdf } from "@/lib/convert/word";
 import { formatBytes } from "@/lib/format";
 import { IconArrowDown, IconArrowUp, IconFileText, IconImage, IconLayers, IconTrash } from "../icons";
 import { buttonGhost, buttonPrimary, inputBase } from "../ui/styles";
 import { FileDrop } from "./FileDrop";
 import { ResultList, type ResultItem } from "./ResultList";
 
-export type DocTool = "images-to-pdf" | "pdf-to-images" | "merge-pdf";
+export type DocTool = "word-to-pdf" | "pdf-to-word" | "images-to-pdf" | "pdf-to-images" | "merge-pdf";
 
 const TOOLS: { id: DocTool; label: string; Icon: typeof IconImage; blurb: string }[] = [
+  { id: "word-to-pdf", label: "Word to PDF", Icon: IconFileText, blurb: "Turn .docx documents into PDFs." },
+  { id: "pdf-to-word", label: "PDF to Word", Icon: IconFileText, blurb: "Get an editable .docx from a PDF." },
   { id: "images-to-pdf", label: "Images to PDF", Icon: IconImage, blurb: "Turn photos or scans into one PDF, in the order you choose." },
   { id: "pdf-to-images", label: "PDF to JPG / PNG", Icon: IconFileText, blurb: "Save every page of a PDF as an image." },
   { id: "merge-pdf", label: "Merge PDFs", Icon: IconLayers, blurb: "Join several PDFs into one, in the order you choose." },
@@ -48,15 +52,16 @@ function OrderList({ files, setFiles }: { files: File[]; setFiles: (f: File[]) =
   );
 }
 
-export function DocumentTools({ initialTool = "images-to-pdf" }: { initialTool?: DocTool }) {
+export function DocumentTools({ initialTool = "word-to-pdf" }: { initialTool?: DocTool }) {
   const [tool, setTool] = useState<DocTool>(initialTool);
   const [queue, setQueue] = useState<File[]>([]);
   const [pageSize, setPageSize] = useState<PageSize>("a4");
   const [imageFormat, setImageFormat] = useState<"png" | "jpeg">("jpeg");
+  const [pdfMode, setPdfMode] = useState<"download" | "print">("download");
   const [busy, setBusy] = useState<string | null>(null);
   const [items, setItems] = useState<ResultItem[]>([]);
   const seq = useRef(0);
-  const ids = { page: useId(), fmt: useId() };
+  const ids = { page: useId(), fmt: useId(), mode: useId() };
 
   function switchTool(next: DocTool) {
     setTool(next);
@@ -88,7 +93,7 @@ export function DocumentTools({ initialTool = "images-to-pdf" }: { initialTool?:
     <div className="flex flex-col gap-6">
       <fieldset>
         <legend className="sr-only">Choose a tool</legend>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {TOOLS.map(({ id, label, Icon, blurb }) => (
             <label
               key={id}
@@ -105,6 +110,26 @@ export function DocumentTools({ initialTool = "images-to-pdf" }: { initialTool?:
         </div>
       </fieldset>
 
+      {tool === "word-to-pdf" && (
+        <div className="max-w-md">
+          <label htmlFor={ids.mode} className="mb-1 block font-bold">PDF type</label>
+          <select id={ids.mode} value={pdfMode} onChange={(e) => setPdfMode(e.target.value as "download" | "print")} className={`${inputBase} h-control`}>
+            <option value="download">Exact look, download straight away</option>
+            <option value="print">Selectable text, through the print dialog</option>
+          </select>
+          <p className="mt-1 text-sm text-muted">
+            {pdfMode === "download"
+              ? "Each page is saved as a sharp image, exactly as laid out. Text can't be selected."
+              : "Your browser's print dialog opens: choose “Save as PDF” as the printer."}
+          </p>
+        </div>
+      )}
+      {tool === "pdf-to-word" && (
+        <p className="text-sm text-muted">
+          Text, headings, bold and italic come across as editable text. Scanned pages are added as pictures. Complex layouts
+          (columns, text boxes, tables) may need tidying in Word.
+        </p>
+      )}
       {tool === "images-to-pdf" && (
         <div className="max-w-xs">
           <label htmlFor={ids.page} className="mb-1 block font-bold">Page size</label>
@@ -127,18 +152,51 @@ export function DocumentTools({ initialTool = "images-to-pdf" }: { initialTool?:
 
       <FileDrop
         key={tool}
-        accept={tool === "images-to-pdf" ? IMAGE_ACCEPT : "application/pdf,.pdf"}
-        multiple={tool !== "pdf-to-images"}
+        accept={tool === "images-to-pdf" ? IMAGE_ACCEPT : tool === "word-to-pdf" ? WORD_ACCEPT : "application/pdf,.pdf"}
+        multiple={tool === "images-to-pdf" || tool === "merge-pdf" || (tool === "word-to-pdf" && pdfMode === "download")}
         hint={
-          tool === "images-to-pdf"
-            ? "JPG, PNG, WebP, GIF, AVIF, SVG (HEIC in Safari). Up to 50 MB each."
+          tool === "word-to-pdf"
+            ? "Word .docx files up to 50 MB. Old .doc files need saving as .docx first."
+            : tool === "pdf-to-word"
+              ? "One PDF up to 100 MB and 300 pages."
+              : tool === "images-to-pdf"
+            ? `${INPUT_LABEL}. Up to 100 MB each.`
             : tool === "merge-pdf"
               ? "PDF files up to 100 MB each. Password-protected PDFs can't be merged."
               : "One PDF up to 100 MB and 300 pages."
         }
-        buttonLabel={tool === "images-to-pdf" ? "Choose images" : tool === "merge-pdf" ? "Choose PDFs" : "Choose a PDF"}
+        buttonLabel={
+          tool === "word-to-pdf"
+            ? "Choose Word files"
+            : tool === "images-to-pdf"
+              ? "Choose images"
+              : tool === "merge-pdf"
+                ? "Choose PDFs"
+                : "Choose a PDF"
+        }
         onFiles={(files) => {
-          if (tool === "pdf-to-images") {
+          if (tool === "word-to-pdf" && pdfMode === "print") {
+            const f = files[0];
+            setBusy("Preparing the document…");
+            printWord(f)
+              .catch((e) => setItems((prev) => [{ key: `p${++seq.current}`, source: f.name, status: "error", error: errorText(e, "Something went wrong.") }, ...prev]))
+              .finally(() => setBusy(null));
+          } else if (tool === "word-to-pdf") {
+            void (async () => {
+              for (const f of files) {
+                await run("Converting…", f.name, async () => {
+                  const blob = await wordToPdf(f, (done, total) => setBusy(`${f.name}: page ${done} of ${total}…`));
+                  return [{ name: outputName(f.name, "pdf"), blob }];
+                });
+              }
+            })();
+          } else if (tool === "pdf-to-word") {
+            const f = files[0];
+            void run("Reading the PDF…", f.name, async () => {
+              const blob = await pdfToWord(f, (done, total) => setBusy(`Reading page ${done} of ${total}…`));
+              return [{ name: outputName(f.name, "docx"), blob }];
+            });
+          } else if (tool === "pdf-to-images") {
             const f = files[0];
             void run("Rendering pages…", f.name, async () => {
               const pages = await pdfToImages(f, imageFormat, (done, total) => setBusy(`Rendering page ${done} of ${total}…`));

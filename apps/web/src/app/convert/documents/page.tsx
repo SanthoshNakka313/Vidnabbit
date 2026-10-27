@@ -4,9 +4,9 @@ import { DocumentTools } from "@/components/convert/DocumentTools";
 import { pageMetadata } from "@/lib/site";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Free PDF tools: images to PDF, PDF to JPG, merge PDF",
+  title: "Free Word to PDF and PDF to Word converter, plus PDF tools",
   description:
-    "Turn images into a PDF, save PDF pages as JPG or PNG, and merge PDFs for free, right in your browser. No upload, no sign-up, no watermark.",
+    "Convert Word to PDF and PDF to Word, turn images into a PDF, save PDF pages as JPG or PNG, and merge PDFs for free, right in your browser. No upload, no sign-up, no watermark.",
   path: "/convert/documents",
 });
 
@@ -16,8 +16,16 @@ const FAQ = [
     a: "No. Every tool here runs in your web browser on your own device, so your PDFs and images are never sent to VidNabbit or anyone else.",
   },
   {
-    q: "Can I convert Word, Excel or PowerPoint files?",
-    a: "Not yet. Those formats need a full office suite to convert accurately, which doesn't run in a browser. For now, open the file in Word, Google Docs or LibreOffice and use File > Save as PDF (or Download as PDF), then use these tools.",
+    q: "How good is Word to PDF?",
+    a: "Text, fonts, headings, lists, tables, images, headers and footers are laid out as in Word. Choose “Exact look” to download a PDF straight away (each page is a sharp image, so text can't be selected), or “Selectable text” to save through your browser's print dialog. Very complex layouts, such as floating text boxes, may differ slightly from Word.",
+  },
+  {
+    q: "How good is PDF to Word?",
+    a: "You get an editable .docx with the text, headings, bold and italic, page by page. Scanned pages have no text to read, so they are added as pictures. Columns, tables and text boxes come across as plain paragraphs and may need tidying in Word.",
+  },
+  {
+    q: "Can I convert old .doc, Excel or PowerPoint files?",
+    a: "Not yet. Open old .doc files in Word, Google Docs or LibreOffice and save them as .docx first. For Excel and PowerPoint, use File > Save as PDF in the app, then use these tools.",
   },
   {
     q: "Is there a watermark or page limit?",
@@ -40,10 +48,10 @@ export default function DocumentConverterPage() {
       crumb="Document converter"
       title={
         <>
-          Free PDF tools. <span className="text-brand-gradient sm:block">Images, pages and merging.</span>
+          Free PDF tools. <span className="text-brand-gradient sm:block">Word, images and merging.</span>
         </>
       }
-      intro="Make a PDF from images, save PDF pages as pictures, or merge PDFs. It all happens in your browser, for free."
+      intro="Word to PDF, PDF to Word, images to PDF, PDF to pictures, and merging. It all happens in your browser, for free."
       faq={FAQ}
     >
       <DocumentTools />

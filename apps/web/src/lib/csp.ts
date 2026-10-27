@@ -41,7 +41,8 @@ export function buildCsp({ nonce, isDev, apiUrl }: CspOptions): string {
     "img-src": ["'self'", "blob:", "data:", "https:"],
     "font-src": ["'self'"],
     "connect-src": ["'self'", api, TURNSTILE_ORIGIN],
-    "frame-src": [TURNSTILE_ORIGIN],
+    // 'self': the Word converter lays documents out in a script-free frame (public/frames).
+    "frame-src": ["'self'", TURNSTILE_ORIGIN],
     "media-src": ["'self'"],
     "worker-src": ["'self'"],
     "object-src": ["'none'"],

@@ -12,7 +12,7 @@ describe("buildCsp", () => {
 
   it("allows the API origin, Turnstile frames and https images", () => {
     expect(prod).toContain("connect-src 'self' https://api.vidnabbit.test https://challenges.cloudflare.com");
-    expect(prod).toContain("frame-src https://challenges.cloudflare.com");
+    expect(prod).toContain("frame-src 'self' https://challenges.cloudflare.com");
     expect(prod).toContain("img-src 'self' blob: data: https:");
     expect(prod).toContain("object-src 'none'");
     expect(prod).toContain("frame-ancestors 'none'");

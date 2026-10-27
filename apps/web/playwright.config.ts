@@ -20,6 +20,9 @@ export default defineConfig({
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
     { name: "mobile", use: { ...devices["Pixel 7"], viewport: { width: 360, height: 780 } } },
+    // The converters depend on each browser's own codecs, so they also run in Safari and Firefox.
+    { name: "webkit", use: { ...devices["Desktop Safari"] }, testMatch: /convert.*\.spec\.ts/ },
+    { name: "firefox", use: { ...devices["Desktop Firefox"] }, testMatch: /convert.*\.spec\.ts/ },
   ],
   webServer: {
     command: `npx next build && npx next start -p ${PORT}`,

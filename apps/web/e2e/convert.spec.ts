@@ -66,7 +66,7 @@ test.describe("image converter", () => {
       mimeType: "image/png",
       buffer: Buffer.from("not really a png"),
     });
-    await expect(page.getByText(/can't open this image/)).toBeVisible();
+    await expect(page.getByText(/couldn't be opened/)).toBeVisible();
   });
 });
 
@@ -76,6 +76,7 @@ test.describe("document tools", () => {
     const noUploads = forbidUploads(page);
 
     // Images -> PDF (one page per image, in the chosen order)
+    await page.locator("label", { hasText: "Images to PDF" }).click();
     await page.locator("input[type=file]").setInputFiles(IMAGES);
     await page.getByRole("button", { name: `Move ${IMAGES[1].split("/").pop()} up` }).click();
     await page.getByRole("button", { name: "Create PDF (2 pages)" }).click();
