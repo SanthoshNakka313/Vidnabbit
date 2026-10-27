@@ -42,7 +42,7 @@ export default function Page() {
         </li>
         <li>Copy the page address from the address bar or the platform&apos;s Share button.</li>
         <li>
-          Paste it into <Link href="/">VidNabbit</Link> and press <strong>Nab it</strong>.
+          Paste it into <Link href="/download">VidNabbit</Link> and press <strong>Nab it</strong>.
         </li>
         <li>
           Pick <strong>Best</strong> for a master copy (up to 4K where your upload has it), or MP3 /

@@ -25,9 +25,9 @@ export const SITE_INDEXABLE = process.env.NEXT_PUBLIC_NOINDEX !== "1";
 
 export { SITE_NAME };
 export const SITE_TAGLINE = "Paste it. Nab it.";
-export const SITE_TITLE = "VidNabbit: free downloader for video, audio and images";
+export const SITE_TITLE = "VidNabbit: free media downloader and file converter";
 export const SITE_DESCRIPTION =
-  "Save video, audio and images you own or have the right to download. Paste a link, pick MP4, MP3, M4A or the original image, and nab it. Free, no sign-up.";
+  "Download video, music and images from links, and convert images, Word and PDF files in your browser. Free, no sign-up, no watermark.";
 export const SITE_LOCALE = "en_US";
 /** Public contact for legal, privacy and abuse (forwarded by Cloudflare Email Routing). */
 export const CONTACT_EMAIL = "abuse@vidnabbit.com";
@@ -193,6 +193,7 @@ export const footerLinks: SiteLink[] = footerLinkGroups.flatMap((g) => g.links);
 /** Indexable routes for the sitemap, with a rough priority. */
 export const sitemapRoutes: { path: string; priority: number; changeFrequency: "weekly" | "monthly" | "yearly"; lastModified?: string }[] = [
   { path: "/", priority: 1, changeFrequency: "weekly" },
+  { path: "/download", priority: 0.95, changeFrequency: "weekly" },
   { path: "/convert/images", priority: 0.9, changeFrequency: "monthly" },
   { path: "/convert/documents", priority: 0.9, changeFrequency: "monthly" },
   { path: "/how-it-works", priority: 0.8, changeFrequency: "monthly" },

@@ -74,7 +74,7 @@ export default function Page() {
       <ol>
         <li>Copy the address of the page with the video.</li>
         <li>
-          Paste it into <Link href="/">VidNabbit</Link> and press <strong>Nab it</strong>.
+          Paste it into <Link href="/download">VidNabbit</Link> and press <strong>Nab it</strong>.
         </li>
         <li>
           Pick a format. MP4 720p is a good default for classrooms; pick Best if you&apos;ll edit it.

@@ -7,13 +7,14 @@ import { IconMenu, IconX } from "./icons";
 import { Wordmark } from "./Wordmark";
 
 const NAV = [
-  { href: "/convert/images", label: "Convert", match: "/convert" },
+  { href: "/download", label: "VidNabbit" },
+  { href: "/convert/images", label: "Convabbit", match: "/convert" },
   { href: "/how-it-works", label: "How it works" },
   { href: "/supported-sites", label: "Supported sites" },
   { href: "/faq", label: "FAQ" },
 ];
 
-/** "Convert" stays highlighted on both converter pages. */
+/** "Convabbit" stays highlighted on both converter pages. */
 function isCurrent(pathname: string, item: { href: string; match?: string }) {
   return item.match ? pathname.startsWith(item.match) : pathname === item.href;
 }
@@ -59,7 +60,7 @@ export function SiteHeader() {
             ))}
             <li className="ml-2">
               <Link
-                href="/#nab"
+                href="/download#nab"
                 className="inline-flex min-h-tap items-center rounded-full bg-ink px-5 font-bold text-white transition-transform hover:-translate-y-px dark:bg-white dark:text-ink"
               >
                 Nab a link

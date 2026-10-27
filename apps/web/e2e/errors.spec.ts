@@ -2,7 +2,7 @@ import { expect, submitUrl, test } from "./fixtures";
 
 test.describe("error states (mock API)", () => {
   test("DRM-protected service", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/download");
     await submitUrl(page, "https://www.netflix.com/watch/80100172");
     const alert = page.locator("[role=alert][data-error-code]");
     await expect(alert).toHaveAttribute("data-error-code", "drm_protected");
@@ -17,7 +17,7 @@ test.describe("error states (mock API)", () => {
   });
 
   test("private content", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/download");
     await submitUrl(page, "https://example.com/private/clip-42");
     const alert = page.locator("[role=alert][data-error-code]");
     await expect(alert.getByRole("heading", { name: "This content is private" })).toBeFocused();
@@ -25,7 +25,7 @@ test.describe("error states (mock API)", () => {
   });
 
   test("rate limited shows a countdown before retry", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/download");
     await submitUrl(page, "https://example.com/watch?mock=rate_limited");
     const alert = page.locator("[role=alert][data-error-code]");
     await expect(alert.getByRole("heading", { name: "You're going a bit fast" })).toBeVisible();
@@ -35,13 +35,13 @@ test.describe("error states (mock API)", () => {
   });
 
   test("live streams are refused with a friendly message", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/download");
     await submitUrl(page, "https://example.com/live/now");
     await expect(page.locator("[role=alert][data-error-code]")).toContainText("Live streams can't be downloaded");
   });
 
   test("rights-holder block links to the copyright page", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/download");
     await submitUrl(page, "https://example.com/watch?mock=blocked_by_rights_holder");
     await expect(
       page.locator("[role=alert][data-error-code]").getByRole("link", { name: "Learn about our copyright policy" }),
@@ -49,7 +49,7 @@ test.describe("error states (mock API)", () => {
   });
 
   test("client-side validation blocks bad links without calling the API", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/download");
     await submitUrl(page, "ftp://example.com/file");
     const input = page.getByLabel("Paste a link");
     await expect(input).toHaveAttribute("aria-invalid", "true");
@@ -64,7 +64,7 @@ test.describe("error states (mock API)", () => {
       dialog = true;
       void d.dismiss();
     });
-    await page.goto("/");
+    await page.goto("/download");
     await submitUrl(page, "https://example.com/watch?mock=xss");
     await expect(page.getByTestId("result-title")).toHaveText("<img src=x onerror=alert(1)>");
     await expect(page.getByText('<script>alert("uploader")</script>')).toBeVisible();

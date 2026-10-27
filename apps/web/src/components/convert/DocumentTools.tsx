@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { INPUT_LABEL } from "@/lib/convert/formats";
 import { ConvertError, IMAGE_ACCEPT, outputName } from "@/lib/convert/image";
 import { imagesToPdf, mergePdfs, pdfToImages, type PageSize } from "@/lib/convert/pdf";
@@ -54,6 +54,13 @@ function OrderList({ files, setFiles }: { files: File[]; setFiles: (f: File[]) =
 
 export function DocumentTools({ initialTool = "word-to-pdf" }: { initialTool?: DocTool }) {
   const [tool, setTool] = useState<DocTool>(initialTool);
+  // Links like /convert/documents?tool=pdf-to-word open a tool directly. Read after
+  // load (not via searchParams) so the page itself stays static.
+  useEffect(() => {
+    const wanted = new URLSearchParams(window.location.search).get("tool");
+    const match = TOOLS.find((t) => t.id === wanted);
+    if (match) setTool(match.id);
+  }, []);
   const [queue, setQueue] = useState<File[]>([]);
   const [pageSize, setPageSize] = useState<PageSize>("a4");
   const [imageFormat, setImageFormat] = useState<"png" | "jpeg">("jpeg");

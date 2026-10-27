@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { INPUT_LABEL, INPUT_ONLY } from "@/lib/convert/formats";
 import { ConvertError, IMAGE_ACCEPT, OUTPUT_FORMATS, convertImage, formatById, type ImageOutput } from "@/lib/convert/image";
 import { buttonGhost, inputBase } from "../ui/styles";
@@ -19,6 +19,13 @@ const MAX_FILES = 50;
 
 export function ImageConverter({ initialFormat = "jpeg" }: { initialFormat?: ImageOutput }) {
   const [format, setFormat] = useState<ImageOutput>(initialFormat);
+  // Links like /convert/images?to=webp pick the output format. Read after load so the page stays static.
+  useEffect(() => {
+    const wanted = new URLSearchParams(window.location.search).get("to");
+    const match = OUTPUT_FORMATS.find((f) => f.id === wanted);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync from the URL; the server render can't see it
+    if (match) setFormat(match.id);
+  }, []);
   const [quality, setQuality] = useState(90);
   const [maxSide, setMaxSide] = useState("");
   const [items, setItems] = useState<ResultItem[]>([]);

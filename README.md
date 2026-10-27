@@ -1,8 +1,10 @@
 <p align="center"><img src="brand/svg/vidnabbit-logo-horizontal.svg" alt="VidNabbit" width="420"></p>
 
-<p align="center"><b>Paste it. Nab it.</b><br>A fast, friendly downloader for videos, images and audio.</p>
+<p align="center"><b>Paste it. Nab it.</b><br>A free media downloader and file converter.</p>
 
-<p align="center"><a href="https://vidnabbit.com"><b>vidnabbit.com</b></a> · <a href="https://vidnabbit.com/supported-sites">Supported sites</a> · <a href="https://vidnabbit.com/faq">FAQ</a> · <a href="https://vidnabbit.com/copyright">Copyright &amp; takedown</a></p>
+<p align="center"><a href="https://vidnabbit.com"><img alt="Live at vidnabbit.com" src="https://img.shields.io/website?url=https%3A%2F%2Fvidnabbit.com&up_message=live&down_message=down&label=vidnabbit.com&style=for-the-badge&color=F43F5E"></a></p>
+
+<p align="center"><a href="https://vidnabbit.com"><b>vidnabbit.com</b></a> · <a href="https://vidnabbit.com/download">Downloader</a> · <a href="https://vidnabbit.com/convert/images">Image converter</a> · <a href="https://vidnabbit.com/convert/documents">Word &amp; PDF</a> · <a href="https://vidnabbit.com/supported-sites">Supported sites</a> · <a href="https://vidnabbit.com/faq">FAQ</a> · <a href="https://vidnabbit.com/copyright">Copyright &amp; takedown</a></p>
 
 VidNabbit is a free website that downloads video, audio and images from **public** URLs using yt-dlp and ffmpeg. It is meant for media you own or have the right to download. These safeguards are non-negotiable:
 
@@ -13,7 +15,19 @@ VidNabbit is a free website that downloads video, audio and images from **public
 - rate limits,
 - SSRF protection.
 
+**🟢 Live at [vidnabbit.com](https://vidnabbit.com) since 27 October 2026.**
+
 ## What it does
+
+The site has two tools:
+
+- **VidNabbit** ([vidnabbit.com/download](https://vidnabbit.com/download)) downloads media from links (details below).
+- **Convabbit** ([vidnabbit.com/convert/images](https://vidnabbit.com/convert/images)) converts files entirely in the browser, so nothing is uploaded:
+  - images between JPG, PNG, WebP, AVIF, JPEG XL, GIF/APNG, TIFF, BMP, ICO, SVG and EPS (and opens HEIC, RAW/DNG and AI);
+  - Word to PDF and PDF to Word;
+  - images to PDF, PDF to images, and merging PDFs.
+
+### Downloader
 
 Paste a public link, pick a format (MP4 up to 4K, MP3, M4A or the original image), and download it. The file is deleted from our storage within 1 hour.
 

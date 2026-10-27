@@ -46,8 +46,9 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
-      // The home page hosts the result and download views: send no referrer
+      // The download page hosts the result and download views: send no referrer
       // at all from there (docs/03 §2.11). Later rules override earlier ones.
+      { source: "/download", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] },
       { source: "/", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] },
       // Converter pages are cross-origin isolated so LibRaw (camera RAW) can use
       // threads. They load nothing from other sites, so nothing breaks. Workers

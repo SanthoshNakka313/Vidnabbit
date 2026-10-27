@@ -4,7 +4,7 @@ test.describe("download flow (mock API)", () => {
   test("paste → extract → choose format → progress → done", async ({ page, context, browserName }) => {
     test.skip(browserName !== "chromium", "clipboard permissions are Chromium-only");
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-    await page.goto("/");
+    await page.goto("/download");
 
     // No Turnstile before a download starts.
     await expect(page.getByTestId("turnstile")).toHaveCount(0);
@@ -67,7 +67,7 @@ test.describe("download flow (mock API)", () => {
   });
 
   test("keyboard only: submit with Enter and download", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/download");
     await page.getByLabel("Paste a link").focus();
     await page.keyboard.type("example.com/podcast/episode-1");
     await page.keyboard.press("Enter");
@@ -79,7 +79,7 @@ test.describe("download flow (mock API)", () => {
   });
 
   test("cancel during progress returns to the format list", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/download");
     await submitUrl(page, "https://example.com/watch?v=1");
     await page.getByRole("button", { name: /^Download/ }).click();
     await expect(page.getByRole("progressbar")).toBeVisible();
@@ -89,7 +89,7 @@ test.describe("download flow (mock API)", () => {
   });
 
   test("server asks for a bot check before extracting", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/download");
     await submitUrl(page, "https://example.com/watch?mock=extract_challenge");
     await expect(page.getByRole("heading", { name: "Quick check needed" })).toBeVisible();
     await expect(page.getByTestId("turnstile-stub")).toBeVisible();
@@ -97,7 +97,7 @@ test.describe("download flow (mock API)", () => {
   });
 
   test("job failure shows an error with a retry", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/download");
     await submitUrl(page, "https://example.com/watch?mock=job_failed");
     await page.getByRole("button", { name: /^Download/ }).click();
     const alert = page.locator("[role=alert][data-error-code]");
@@ -107,7 +107,7 @@ test.describe("download flow (mock API)", () => {
   });
 
   test("rejected job token: Try the check again recovers", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/download");
     await submitUrl(page, "https://example.com/watch?mock=challenge_required");
     await page.getByRole("button", { name: /^Download/ }).click();
     await expect(page.locator("[role=alert][data-error-code]")).toContainText("Quick check needed");

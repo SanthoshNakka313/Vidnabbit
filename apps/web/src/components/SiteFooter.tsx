@@ -4,10 +4,11 @@ type FooterLink = { href: string; label: string };
 
 const COLUMNS: { title: string; links: FooterLink[] }[] = [
   {
-    title: "VidNabbit",
+    title: "Tools",
     links: [
-      { href: "/convert/images", label: "Image converter" },
-      { href: "/convert/documents", label: "Word & PDF tools" },
+      { href: "/download", label: "VidNabbit downloader" },
+      { href: "/convert/images", label: "Convabbit images" },
+      { href: "/convert/documents", label: "Convabbit Word & PDF" },
       { href: "/how-it-works", label: "How it works" },
       { href: "/supported-sites", label: "Supported sites" },
       { href: "/faq", label: "FAQ" },

@@ -48,8 +48,8 @@ test("legal pages are dated, have a contact and no draft text", async ({ page })
   }
 });
 
-test("home has no horizontal scroll with a result shown", async ({ page }) => {
-  await page.goto("/");
+test("download page has no horizontal scroll with a result shown", async ({ page }) => {
+  await page.goto("/download");
   await page.getByLabel("Paste a link").fill("https://example.com/watch?v=1");
   await page.getByRole("button", { name: "Nab it" }).click();
   await expect(page.getByTestId("result-title")).toBeVisible();
@@ -89,4 +89,26 @@ test("mobile menu opens, closes with Escape and restores focus", async ({ page, 
   await page.keyboard.press("Escape");
   await expect(menu).toHaveAttribute("aria-expanded", "false");
   await expect(menu).toBeFocused();
+});
+
+test("home offers both products and each card opens its tool", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Nab it or convert it");
+  await page.getByRole("link", { name: "VidNabbit", exact: true }).last().click();
+  await expect(page).toHaveURL(/\/download$/);
+  await expect(page.getByLabel("Paste a link")).toBeVisible();
+  await page.goto("/");
+  await page.getByRole("heading", { name: "Convabbit" }).getByRole("link").click();
+  await expect(page).toHaveURL(/\/convert\/images$/);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+  expect(overflow).toBe(false);
+});
+
+test("popular task links open the right tool", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "PDF to Word" }).click();
+  await expect(page).toHaveURL(/tool=pdf-to-word/);
+  await expect(page.getByRole("radio", { name: /PDF to Word/ })).toBeChecked();
+  await page.goto("/convert/images?to=webp");
+  await expect(page.locator("select").first()).toHaveValue("webp");
 });

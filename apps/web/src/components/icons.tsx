@@ -200,3 +200,19 @@ export const IconLayers = (p: IconProps) => (
     <path d="m2 12 10 5 10-5" />
   </Icon>
 );
+
+export const IconConvert = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 9h13" />
+    <path d="m13 5 4 4-4 4" />
+    <path d="M20 15H7" />
+    <path d="m11 19-4-4 4-4" />
+  </Icon>
+);
+
+export const IconArrowRight = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M5 12h14" />
+    <path d="m13 6 6 6-6 6" />
+  </Icon>
+);

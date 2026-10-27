@@ -94,7 +94,7 @@ export function RelatedGuides({ current }: { current?: string }) {
         </li>
       </ul>
       <p>
-        Ready? <Link href="/">Paste a link and nab it</Link>.
+        Ready? <Link href="/download">Paste a link and nab it</Link>.
       </p>
     </>
   );
