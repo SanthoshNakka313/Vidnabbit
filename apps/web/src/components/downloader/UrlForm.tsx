@@ -168,7 +168,7 @@ export function UrlForm({
         {pasteBlocked && (
           <>Paste with Ctrl+V (or ⌘V on a Mac), then press Enter. </>
         )}
-        Links from sites that allow downloading, or direct file links.{" "}
+        Public links to media you own or may download.{" "}
         <Link href="/supported-sites" className={linkInline}>
           See supported sites
         </Link>

@@ -58,10 +58,7 @@ PIRACY_EXTRACTORS: frozenset[str] = frozenset({"knownpiracy"})
 # Generic only counts as allowed for a direct link to a media file (yt-dlp sets
 # ``direct``), never for an arbitrary page with an embedded player.
 GENERIC_EXTRACTOR = "generic"
-NOT_ALLOWED_MESSAGE = (
-    "VidNabbit only works with sites that allow downloading, like the Internet Archive and "
-    "Wikimedia Commons, or a direct link to a file. See Supported sites."
-)
+NOT_ALLOWED_MESSAGE = "VidNabbit doesn't support this site right now. See Supported sites."
 
 
 @functools.cache

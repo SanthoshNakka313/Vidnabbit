@@ -18,7 +18,7 @@ export default function CopyrightPage() {
       <DraftBanner />
       <p>
         VidNabbit respects the rights of creators. We don&apos;t host content: files are produced
-        on request from sites that allow downloading and deleted automatically within 1 hour. We never bypass DRM
+        on request from public pages and deleted automatically within 1 hour. We never bypass DRM
         and never process content that needs a sign-in.
       </p>
 

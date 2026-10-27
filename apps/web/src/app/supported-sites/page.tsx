@@ -6,17 +6,18 @@ import { PageShell } from "@/components/PageShell";
 export const metadata: Metadata = pageMetadata({
   title: "Supported sites",
   description:
-    "VidNabbit works with sites that allow downloading: the Internet Archive, Wikimedia Commons, Jamendo and direct file links. What never works: DRM, logins, private and live content.",
+    "VidNabbit saves public video, audio and images from YouTube, Instagram and thousands of other sites. What never works: DRM, logins, private and live content.",
   path: "/supported-sites",
 });
 
 const WORKS = [
-  { site: "Internet Archive (archive.org)", what: "public-domain and Creative Commons films, recordings and audio" },
-  { site: "Wikimedia Commons", what: "freely licensed video, audio and images" },
-  { site: "Jamendo", what: "Creative Commons music, tracks and albums" },
+  { site: "YouTube", what: "public videos and Shorts that play without signing in (one video at a time, not channels or playlists)" },
+  { site: "Instagram", what: "public posts and reels that show while signed out. Instagram hides a lot from signed-out visitors, so many links won't work" },
+  { site: "Other video, audio and social sites", what: "public pages that play without signing in, on thousands of sites" },
+  { site: "Media archives", what: "Creative Commons and public-domain collections such as the Internet Archive and Wikimedia Commons" },
   {
     site: "Direct file links",
-    what: "a link that ends in a media file such as .mp4, .mp3 or .jpg, for example your own files on your own site",
+    what: "a link that ends in a media file such as .mp4, .mp3 or .jpg",
   },
 ];
 
@@ -34,15 +35,15 @@ export default function SupportedSitesPage() {
     <PageShell>
       <h1>Supported sites</h1>
       <p>
-        VidNabbit only works with sites that <strong>allow downloading</strong>. Many big video and
-        social platforms don&apos;t allow it in their terms, so we don&apos;t support them, even
-        for public posts. To save your own uploads from those sites, use their own download or
-        account-export tools (see{" "}
+        VidNabbit works with <strong>public</strong> links: if the video, audio or image plays in a
+        private browser window without signing in, we can usually read it. Many sites limit
+        downloading in their own terms, so check that you&apos;re allowed to save what you paste
+        (see{" "}
         <Link href="/guides/save-your-own-uploads">how to save your own uploads</Link>). We are not
         affiliated with any of these sites.
       </p>
 
-      <h2>Works with</h2>
+      <h2>Usually works</h2>
       <ul>
         {WORKS.map((w) => (
           <li key={w.site}>
@@ -51,8 +52,7 @@ export default function SupportedSitesPage() {
         ))}
       </ul>
       <p>
-        We add sites once we&apos;ve checked that their terms allow downloading. Links from any
-        other site are refused.
+        Site support changes often, so this list is a guide, not a guarantee.
       </p>
 
       <h2>Never works</h2>

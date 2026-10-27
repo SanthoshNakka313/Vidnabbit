@@ -112,10 +112,11 @@ class Settings(BaseSettings):
     extraction_enabled: bool = True
     disabled_extractors: str = ""
     disabled_domains: str = ""
-    # Only sites whose terms allow downloading (owner decision 2026-10-25, "Option A").
-    # yt-dlp extractor keys; Generic is limited to direct file links. "*" allows every
-    # extractor and is refused in production. Widen only after legal review.
-    allowed_extractors: str = "ArchiveOrg,Wikimedia,Jamendo,JamendoAlbum,Generic"
+    # Every public site by default (owner decision 2026-10-27). DRM, logins, private and
+    # live content, piracy extractors and the takedown blocklist still apply. Set a
+    # comma-separated list of yt-dlp extractor keys to restrict sites; with a list,
+    # Generic is limited to direct file links.
+    allowed_extractors: str = "*"
 
     # Rate limits (per hashed client IP; IPv6 per /64)
     rate_extract_per_minute: int = 10
@@ -209,8 +210,6 @@ class Settings(BaseSettings):
                 problems.append("DATABASE_URL is required (takedowns are legal records)")
             if self.queue_backend != "redis":
                 problems.append("QUEUE_BACKEND=redis is required (workers run downloads)")
-            if self.allowed_extractor_set is None:
-                problems.append("ALLOWED_EXTRACTORS=* is not allowed (sites must permit downloads)")
             if problems:
                 raise ValueError("Invalid production configuration: " + "; ".join(problems))
         if self.storage_backend == "r2":

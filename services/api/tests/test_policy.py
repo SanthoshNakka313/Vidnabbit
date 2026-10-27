@@ -138,30 +138,35 @@ def test_reused_extract_is_rechecked_for_item_blocks() -> None:
 
 # ---------------------------------------------------------------- site allowlist (Option A)
 
-ALLOWLIST = Settings(app_env="test", _env_file=None).allowed_extractor_set
+# An example restricted list; production allows every site by default.
+ALLOWLIST = Settings(allowed_extractors="ArchiveOrg,Wikimedia,Jamendo,JamendoAlbum,Youtube,"
+                     "Instagram,Generic", _env_file=None).allowed_extractor_set
 
 
 def allowlisted() -> Policy:
     return Policy(InMemoryBlocklist(), kill=KillSwitches(allowed_extractors=ALLOWLIST))
 
 
-def test_default_allowlist_is_sites_that_permit_downloads() -> None:
-    assert {"archiveorg", "wikimedia", "jamendo", "jamendoalbum", "generic"} == ALLOWLIST
+def test_default_allows_every_site() -> None:
+    assert Settings(_env_file=None).allowed_extractor_set is None
+    assert {"archiveorg", "wikimedia", "jamendo", "jamendoalbum", "youtube",
+            "instagram", "generic"} == ALLOWLIST
 
 
 @pytest.mark.parametrize("url", [
-    "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    "https://youtu.be/dQw4w9WgXcQ",
     "https://www.tiktok.com/@someone/video/7234567890123456789",
-    "https://www.instagram.com/p/Cabc123/",
     "https://vimeo.com/76979871",
+    "https://www.youtube.com/@someone",
+    "https://www.youtube.com/playlist?list=PL123",
+    "https://www.instagram.com/someone/",
+    "https://www.instagram.com/stories/someone/123/",
     "https://x.com/someone/status/1234567890",
 ])
-def test_allowlist_refuses_sites_whose_terms_forbid_downloads(url: str) -> None:
+def test_allowlist_refuses_other_sites(url: str) -> None:
     with pytest.raises(ApiError) as e:
         allowlisted().check_url(url)
     assert e.value.code == ErrorCode.UNSUPPORTED_SITE
-    assert "allow downloading" in e.value.message
+    assert "doesn't support this site" in e.value.message
 
 
 @pytest.mark.parametrize("url", [
@@ -169,6 +174,11 @@ def test_allowlist_refuses_sites_whose_terms_forbid_downloads(url: str) -> None:
     "https://commons.wikimedia.org/wiki/File:Example.webm",
     "https://www.jamendo.com/track/196219/stories-from-emona-i",
     "https://example.org/files/my-talk.mp4",
+    "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "https://youtu.be/dQw4w9WgXcQ",
+    "https://www.youtube.com/shorts/abcdefghijk",
+    "https://www.instagram.com/p/Cabc123/",
+    "https://www.instagram.com/reel/Cabc123/",
 ])
 def test_allowlist_accepts_permitted_sources(url: str) -> None:
     allowlisted().check_url(url)
@@ -183,16 +193,19 @@ def test_generic_needs_a_direct_file_link() -> None:
 
 
 def test_allowlist_applies_to_resolved_extractor_and_reuse() -> None:
-    # A permitted-looking link that resolves to YouTube is still refused.
-    info = {"id": "abc", "extractor_key": "Youtube", "webpage_url": "https://example.org/a.mp4"}
+    # A permitted-looking link that resolves to another site is still refused.
+    info = {"id": "abc", "extractor_key": "TikTok", "webpage_url": "https://example.org/a.mp4"}
     with pytest.raises(ApiError):
         allowlisted().check_info(info)
     with pytest.raises(ApiError):
-        allowlisted().check_reuse("https://archive.org/details/x", [("youtube", "abc")])
+        allowlisted().check_reuse("https://archive.org/details/x", [("tiktok", "abc")])
 
 
-def test_star_allows_everything_but_not_in_production() -> None:
-    assert Settings(allowed_extractors="*", _env_file=None).allowed_extractor_set is None
-    Policy(InMemoryBlocklist()).check_url("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-    with pytest.raises(ValueError, match="ALLOWED_EXTRACTORS"):
-        Settings(app_env="production", allowed_extractors="*", _env_file=None)
+def test_every_site_still_refuses_drm_and_piracy() -> None:
+    policy = Policy(InMemoryBlocklist())  # no allowlist
+    policy.check_url("https://www.tiktok.com/@someone/video/7234567890123456789")
+    with pytest.raises(ApiError) as e:
+        policy.check_url("https://www.netflix.com/watch/80100172")
+    assert e.value.code == ErrorCode.DRM_PROTECTED
+    with pytest.raises(ApiError):
+        policy.check_info({"id": "x", "extractor_key": "KnownPiracy"})

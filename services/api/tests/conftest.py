@@ -85,8 +85,7 @@ class FakeExtractor:
 
 @pytest.fixture
 def settings(tmp_path: Path) -> Settings:
-    return Settings(app_env="test", data_dir=tmp_path / "data", allowed_extractors="*",
-                    _env_file=None)
+    return Settings(app_env="test", data_dir=tmp_path / "data", _env_file=None)
 
 
 @pytest.fixture(autouse=True)

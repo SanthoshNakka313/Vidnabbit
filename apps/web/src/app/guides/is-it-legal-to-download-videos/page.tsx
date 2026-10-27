@@ -78,7 +78,7 @@ export default function Page() {
 
       <h2>How VidNabbit helps you stay on the right side</h2>
       <ul>
-        <li>We only work with sites that allow downloading, and never ask for passwords or cookies.</li>
+        <li>We only work with public pages and never ask for passwords or cookies.</li>
         <li>We never bypass DRM, and we refuse DRM-protected services.</li>
         <li>
           Rights holders can block their content through our{" "}

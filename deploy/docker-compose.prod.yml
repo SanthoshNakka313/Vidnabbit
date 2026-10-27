@@ -41,6 +41,9 @@ x-app-env: &app-env
   DATA_DIR: /work
   WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-4}
   EXTRACTION_ENABLED: ${EXTRACTION_ENABLED:-true}  # emergency stop: set false and `up -d`
+  DISABLED_EXTRACTORS: ${DISABLED_EXTRACTORS:-}  # e.g. Instagram  (switch a site off)
+  DISABLED_DOMAINS: ${DISABLED_DOMAINS:-}
+  ALLOWED_EXTRACTORS: ${ALLOWED_EXTRACTORS:-*}  # "*" = every public site
 
 services:
   caddy:

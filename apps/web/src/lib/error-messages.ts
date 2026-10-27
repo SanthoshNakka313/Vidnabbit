@@ -48,7 +48,7 @@ export function friendlyError(code: ApiErrorCode, ctx: ErrorContext = {}): Frien
       return {
         title: "This link isn't supported",
         description:
-          "VidNabbit only works with sites that allow downloading, like the Internet Archive and Wikimedia Commons, or a direct link to a file.",
+          "VidNabbit couldn't read media from this link. Paste a link to one public video, post or file. Channels, playlists and profiles aren't supported.",
         ...tryAnother,
         tone: "warning",
         link: { href: "/supported-sites", label: "See supported sites" },
