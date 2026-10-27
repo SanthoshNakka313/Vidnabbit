@@ -1,5 +1,7 @@
 # Launching VidNabbit
 
+VidNabbit has been live at https://vidnabbit.com since 2026-10-27. This runbook is how to set up (or rebuild) the stack. The live server's addresses, account IDs and open items are in the private operations doc (`docs/05-operations.md`).
+
 ```
  visitor ──► Cloudflare ──► vidnabbit.com        Worker (Next.js via OpenNext)   apps/web
                   │
@@ -21,14 +23,14 @@ Files here:
 | `.env.example`, `gen-secrets.sh` | Production settings template and secret generator |
 | `cloud-init.yaml` | First-boot hardening for the Hetzner server |
 
-## 0. Before launch (owner)
+## 0. Prerequisites
 
-- [ ] **Legal review** of the Terms, Privacy, Copyright pages and the guides (the site shows "Draft" banners until then).
-- [x] **Domain:** `vidnabbit.com` is an active Cloudflare zone (no DNS records yet; SSL currently "Full").
-- [ ] **Hetzner Cloud account** with an SSH key added. Read Hetzner's ToS/AUP and abuse process first (docs/02 section 11 item 1).
-- [ ] An email address for TLS certificates and abuse contact.
+- The domain as an active Cloudflare zone.
+- A Hetzner Cloud account with an SSH key added. Read Hetzner's ToS/AUP and abuse process first.
+- An email address for TLS certificates and the abuse contact (Cloudflare Email Routing can forward it).
+- Legal pages (Terms, Privacy, Copyright) reviewed for the operator's country.
 
-## 1. Cloudflare (Claude can do these with the `cf` CLI; DNS needs the server IP first)
+## 1. Cloudflare (with the `cf` CLI; DNS needs the server IP first)
 
 1. **Turnstile:** create a widget for `vidnabbit.com` (managed mode). The site key goes in the web build, the secret in `deploy/.env`.
 2. **DNS:** `api` A (and AAAA) record to the server IP, **proxied** (orange cloud).
@@ -38,7 +40,7 @@ Files here:
 
 ## 2. API server (Hetzner)
 
-1. Create a server: Ubuntu 24.04, an EU location, at least 4 vCPU / 8 GB (CX32 or CPX31). Paste `cloud-init.yaml` (with your SSH public key) into "Cloud config". Enable **Backups**.
+1. Create a server: Ubuntu 24.04 or newer, an EU location, x86. The stack is sized for a **CX23** (2 vCPU / 4 GB); on a CX33 (4 vCPU / 8 GB) raise the values listed in `.env.example`. Paste `cloud-init.yaml` (with your SSH public key) into "Cloud config". If you forget, run the same steps over SSH as root. Enable **Backups**.
 2. Attach a **Hetzner Cloud Firewall** (this is the real control: Docker-published ports bypass `ufw`):
    - inbound TCP 22 from your own IP only;
    - inbound TCP 80 and 443 from Cloudflare's ranges only (https://www.cloudflare.com/ips);
