@@ -1,4 +1,4 @@
-"""Production refuses unsafe configuration; TTL can never exceed 1 hour (Safeguard 5)."""
+"""Production refuses unsafe configuration; TTL can never exceed 3 minutes (Safeguard 5)."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ def test_production_requires_secrets_proxy_and_real_turnstile() -> None:
         assert needle in msg
 
 
-@pytest.mark.parametrize("ttl", [59, 3601, 86400])
+@pytest.mark.parametrize("ttl", [59, 181, 3600])
 def test_file_ttl_is_capped(ttl: int) -> None:
     with pytest.raises(ValidationError):
         Settings(file_ttl_seconds=ttl, _env_file=None)

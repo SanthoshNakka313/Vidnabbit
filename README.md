@@ -11,7 +11,7 @@ VidNabbit is a free website that downloads video, audio and images from **public
 - no DRM circumvention,
 - no logins or cookies,
 - a takedown blocklist,
-- files deleted within 1 hour,
+- files deleted within 3 minutes,
 - rate limits,
 - SSRF protection.
 
@@ -29,7 +29,7 @@ The site has two tools:
 
 ### Downloader
 
-Paste a public link, pick a format (MP4 up to 4K, MP3, M4A or the original image), and download it. The file is deleted from our storage within 1 hour.
+Paste a public link, pick a format (MP4 up to 4K, MP3, M4A or the original image), and download it. The file is deleted from our storage within 3 minutes.
 
 - **Works with** public pages on most video, audio and image sites that play without signing in, plus direct file links and archives such as the Internet Archive and Wikimedia Commons.
 - **YouTube:** Creative Commons videos only.
@@ -67,7 +67,7 @@ Open http://localhost:3000. To work on the UI without the backend, run `npm run 
 
 - **Website:** Next.js on Cloudflare Workers via [OpenNext](https://opennext.js.org/cloudflare) (`npm run cf:deploy` in `apps/web`).
 - **API and download workers:** one VM running Docker Compose: Caddy (accepts Cloudflare traffic only), the API, workers, Redis and Postgres on an internal network with no route out, and [Smokescreen](https://github.com/stripe/smokescreen) as the only way to the internet. Smokescreen refuses private, loopback, link-local and cloud-metadata addresses.
-- **Files:** Cloudflare R2, deleted within 1 hour. **Bot check:** Cloudflare Turnstile.
+- **Files:** Cloudflare R2, deleted within 3 minutes. **Bot check:** Cloudflare Turnstile.
 
 See [`deploy/README.md`](deploy/README.md) for the step-by-step runbook and security checks.
 

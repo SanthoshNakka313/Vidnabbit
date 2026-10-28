@@ -4,8 +4,8 @@ Run: ``arq app.worker.WorkerSettings`` (same image as the API, different command
 
 Each job reads its record from Redis, runs the same sandboxed download as the
 in-process runner (:func:`app.jobs.perform_download`), stores the file for at most
-1 hour and writes the result back. Progress is flushed to Redis at most once per
-second. A cron task sweeps expired files and stale work dirs every 5 minutes.
+3 minutes and writes the result back. Progress is flushed to Redis at most once per
+second. A cron task sweeps expired files and stale work dirs every 15 seconds.
 """
 
 from __future__ import annotations
@@ -168,7 +168,7 @@ def worker_options(settings: Settings) -> dict[str, Any]:
     """Everything arq needs except the Redis connection (shared with tests)."""
     return {
         "functions": [func(download_job, name=TASK_NAME)],
-        "cron_jobs": [cron(sweep, minute=set(range(0, 60, 5)), run_at_startup=True),
+        "cron_jobs": [cron(sweep, second={0, 15, 30, 45}, run_at_startup=True),
                       cron(purge_takedowns, hour=3, minute=17, unique=True)],
         "queue_name": QUEUE_NAME,
         "max_jobs": settings.worker_concurrency,

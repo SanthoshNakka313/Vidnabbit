@@ -25,7 +25,14 @@ from arq.connections import ArqRedis
 
 from app.errors import ApiError, ErrorCode
 from app.extractor import ResolvedPreset
-from app.jobs import JOB_ID_RE, JOB_RECORD_TTL, public_status, queue_full, too_many_active
+from app.jobs import (
+    FINISHED_JOB_TTL,
+    JOB_ID_RE,
+    JOB_RECORD_TTL,
+    public_status,
+    queue_full,
+    too_many_active,
+)
 from app.redis_state import RedisConnection
 
 log = logging.getLogger(__name__)
@@ -141,7 +148,7 @@ async def mark_done(r: ArqRedis, job_id: str, *, filename: str, download_url: st
             "status": "done", "progress": "1", "filename": filename,
             "download_url": download_url, "expires_at": str(expires_at),
             "finished_at": str(time.time())})
-        pipe.expire(job_key(job_id), JOB_RECORD_TTL)
+        pipe.expire(job_key(job_id), FINISHED_JOB_TTL)
         await pipe.execute()
 
 
@@ -150,6 +157,6 @@ async def mark_failed(r: ArqRedis, job_id: str, err: ApiError) -> None:
         pipe.hset(job_key(job_id), mapping={
             "status": "failed", "error": json.dumps(err.to_dict()),
             "finished_at": str(time.time())})
-        pipe.expire(job_key(job_id), JOB_RECORD_TTL)
+        pipe.expire(job_key(job_id), FINISHED_JOB_TTL)
         await pipe.execute()
     log.info("job failed job=%s code=%s", job_id, err.code)

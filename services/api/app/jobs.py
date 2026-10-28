@@ -3,7 +3,7 @@
 - :func:`perform_download` is the one code path for a download, used by both the
   in-process runner below and the Redis/arq worker (``app.worker``): per-job work
   dir ``{work_dir}/{job_id}/`` removed in ``finally``, the sandboxed download, a
-  sanitised filename, and storage with a TTL of at most 1 h.
+  sanitised filename, and storage with a TTL of at most 3 minutes.
 - :class:`JobRunner` keeps jobs in memory with bounded concurrency, a bounded
   queue, a per-client cap on queued + running jobs and a janitor. One process
   only; ``app.queue.RedisJobQueue`` is the multi-process equivalent.
@@ -31,8 +31,13 @@ from app.storage import Storage, StoredFile, sanitize_filename
 log = logging.getLogger(__name__)
 
 JOB_ID_RE = re.compile(r"^[0-9a-f]{32}$")
-JOB_RECORD_TTL = 2 * 3600
-STALE_WORKDIR_SECONDS = 2 * 3600
+# A queued or running job keeps its record (it holds the link) only as long as it
+# can possibly take: queue wait (10 min) + job timeout (30 min) + slack.
+JOB_RECORD_TTL = 3600
+# Once a job finishes, its record (link, file name, download URL) goes with the file.
+FINISHED_JOB_TTL = 180
+# Work dirs are removed as soon as a job ends; this only catches crash leftovers.
+STALE_WORKDIR_SECONDS = 2700
 
 Status = Literal["queued", "running", "done", "failed"]
 
@@ -136,7 +141,7 @@ class JobRunner:
         concurrency: int = 2,
         max_queue_depth: int = 200,
         max_active_per_client: int = 2,
-        file_ttl_seconds: int = 3600,
+        file_ttl_seconds: int = 180,
         max_queue_wait_seconds: float = 600.0,
         janitor_interval_seconds: float = 60.0,
         on_complete: Callable[[str, int], Awaitable[None]] | None = None,
@@ -256,7 +261,7 @@ class JobRunner:
         now = now if now is not None else time.time()
         removed = self.storage.delete_expired(now)
         for job_id in [jid for jid, j in self._jobs.items()
-                       if j.finished_at and now - j.finished_at > JOB_RECORD_TTL]:
+                       if j.finished_at and now - j.finished_at > FINISHED_JOB_TTL]:
             del self._jobs[job_id]
         sweep_work_dir(self.work_dir, now)
         if removed:

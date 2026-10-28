@@ -22,6 +22,8 @@ from pathlib import Path
 from typing import Any, Protocol
 from urllib.parse import quote
 
+from app.config import MAX_FILE_TTL_SECONDS
+
 log = logging.getLogger(__name__)
 
 TOKEN_VERSION = 1
@@ -188,7 +190,7 @@ class LocalStorage:
                 exp = int(json.loads(meta_path.read_text(encoding="utf-8"))["expires_at"])
             except (OSError, ValueError, KeyError):
                 # Orphan (crash mid-write): remove once older than the max TTL.
-                exp = int(job_dir.stat().st_mtime) + 3600
+                exp = int(job_dir.stat().st_mtime) + MAX_FILE_TTL_SECONDS
             if now >= exp:
                 shutil.rmtree(job_dir, ignore_errors=True)
                 removed += 1
@@ -207,7 +209,7 @@ class R2Storage:
 
     PREFIX = "dl/"
     PART_SIZE = 64 * 1024**2  # fewer Class A operations than the 8 MB default
-    SWEEP_HOURS = 3  # upload-hour prefixes listed on each sweep (TTL <= 1 h)
+    SWEEP_HOURS = 3  # upload-hour prefixes listed on each sweep (TTL <= 3 min)
 
     def __init__(self, *, bucket: str, client: Any, sweep_interval_seconds: float = 300,
                  part_size: int = PART_SIZE, clock: Callable[[], float] = time.time) -> None:

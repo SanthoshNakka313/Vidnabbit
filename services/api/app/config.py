@@ -23,7 +23,7 @@ TURNSTILE_TEST_SECRETS = {
 }
 TURNSTILE_DUMMY_TOKEN = "XXXX.DUMMY.TOKEN.XXXX"  # noqa: S105 - public test value
 
-MAX_FILE_TTL_SECONDS = 3600  # Safeguard 5
+MAX_FILE_TTL_SECONDS = 180  # Safeguard 5: files and their links last at most 3 minutes
 
 
 def _csv(value: str) -> list[str]:
@@ -87,12 +87,12 @@ class Settings(BaseSettings):
     blocklist_file: Path | None = None  # default data_dir/blocklist.json
     takedown_file: Path | None = None  # default data_dir/takedowns.jsonl
     file_ttl_seconds: int = MAX_FILE_TTL_SECONDS
-    janitor_interval_seconds: int = 60
+    janitor_interval_seconds: int = 15
 
     # Extraction / download
     ffmpeg_location: str | None = None
-    extract_ttl_seconds: int = 1800  # extract_id lifetime (= expires_at)
-    extract_cache_ttl_seconds: int = 600
+    extract_ttl_seconds: int = 180  # extract_id lifetime (= expires_at); holds the pasted link
+    extract_cache_ttl_seconds: int = 180
     extract_cache_max_entries: int = 500
     extract_timeout_seconds: float = 30.0
     extract_max_concurrency: int = 8

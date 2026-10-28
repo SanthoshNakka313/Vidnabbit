@@ -272,3 +272,25 @@ def test_two_api_instances_share_state(qsettings, fake) -> None:
         # The third job request in a minute is refused wherever it lands.
         r = b.post("/v1/jobs", json=body)
         assert r.status_code == 429, r.text
+
+
+def test_finished_job_records_expire_with_the_file(pool: ArqRedis) -> None:
+    """A finished job's record holds the link and download URL: it lives no longer than the file."""
+    from app.queue import mark_done, mark_failed
+
+    async def run() -> tuple[int, int]:
+        await pool.hset(job_key("a" * 32), mapping={"status": "running", "url": URL})
+        await pool.hset(job_key("b" * 32), mapping={"status": "running", "url": URL})
+        await mark_done(pool, "a" * 32, filename="x.mp4", download_url="https://x/y",
+                        expires_at=int(time.time()) + 180)
+        await mark_failed(pool, "b" * 32, ApiError(ErrorCode.INTERNAL))
+        return await pool.ttl(job_key("a" * 32)), await pool.ttl(job_key("b" * 32))
+
+    done_ttl, failed_ttl = asyncio.run(run())
+    assert 0 < done_ttl <= 180
+    assert 0 < failed_ttl <= 180
+
+
+def test_files_last_three_minutes_by_default() -> None:
+    assert Settings(_env_file=None).file_ttl_seconds == 180
+    assert Settings(_env_file=None).extract_ttl_seconds <= 180
