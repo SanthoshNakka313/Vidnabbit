@@ -12,7 +12,7 @@ import { linkInline, pill } from "@/components/ui/styles";
 export const metadata = pageMetadata({
   title: "Free video, music and image downloader: MP4, MP3, JPG",
   description:
-    "VidNabbit saves videos, music and images from public links as MP4, MP3, M4A or the original file. Free, no sign-up, up to 4K, files deleted after 1 hour.",
+    "VidNabbit saves videos, music and images from public links as MP4, MP3, M4A or the original file. Free, no sign-up, up to 4K, files deleted after 3 minutes.",
   path: "/download",
 });
 
@@ -31,7 +31,7 @@ export default function DownloadPage() {
             </h1>
             <p className="max-w-xl text-pretty text-lg text-muted">
               Download video, audio and images you own or have the right to save, as MP4, MP3, M4A or
-              the original file. Free, no sign-up, deleted after 1 hour.
+              the original file. Free, no sign-up, deleted after 3 minutes.
             </p>
           </div>
           <div id="nab" className="scroll-mt-24">

@@ -9,6 +9,9 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
       { href: "/download", label: "VidNabbit downloader" },
       { href: "/convert/images", label: "Convabbit images" },
       { href: "/convert/documents", label: "Convabbit Word & PDF" },
+      { href: "/resume/ats-checker", label: "ResuNabbit ATS checker" },
+      { href: "/resume/humanizer", label: "ResuNabbit humanizer" },
+      { href: "/resume/pdf", label: "ResuNabbit resume to PDF" },
       { href: "/how-it-works", label: "How it works" },
       { href: "/supported-sites", label: "Supported sites" },
       { href: "/faq", label: "FAQ" },
@@ -63,7 +66,7 @@ export function SiteFooter({ guides = [] }: { guides?: FooterLink[] }) {
       </div>
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-page flex-col gap-2 px-4 py-6 text-sm text-white/70 sm:flex-row sm:justify-between sm:px-6">
-          <p>VidNabbit does not host content. Files are deleted within 1 hour. No DRM bypassing, ever.</p>
+          <p>VidNabbit does not host content. Files are deleted within 3 minutes. No DRM bypassing, ever.</p>
           <p>Not affiliated with any site we support. © VidNabbit</p>
         </div>
       </div>

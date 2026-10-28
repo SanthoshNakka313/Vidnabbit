@@ -46,7 +46,7 @@ export function familyOf(font: string): string {
   return name.replace(/([a-z])([A-Z][a-z])/g, "$1 $2") || "Calibri";
 }
 
-interface Line {
+export interface Line {
   y: number;
   size: number;
   left: number;
@@ -91,6 +91,13 @@ function lineRuns(line: Line): Run[] {
     prevEnd = it.x + it.width;
   }
   return runs;
+}
+
+/** Plain text of one line, with spaces where the PDF left gaps. */
+export function lineText(line: Line): string {
+  return lineRuns(line)
+    .map((r) => r.text)
+    .join("");
 }
 
 /** The most common text size on the page, weighted by characters: the body text size. */

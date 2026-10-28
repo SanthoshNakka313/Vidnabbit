@@ -157,7 +157,7 @@ export function friendlyError(code: ApiErrorCode, ctx: ErrorContext = {}): Frien
     case "not_found":
       return {
         title: "This download has expired",
-        description: "Files and links are deleted after 1 hour.",
+        description: "Files and links are deleted after 3 minutes.",
         actionLabel: "Start again",
         action: "restart",
         tone: "warning",

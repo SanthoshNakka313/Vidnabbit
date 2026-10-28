@@ -13,7 +13,7 @@ const STEPS = [
   },
   {
     title: "Nab it",
-    body: "We prepare the file and hand you a download link. It's deleted after 1 hour.",
+    body: "We prepare the file and hand you a download link. It's deleted after 3 minutes.",
     Icon: IconDownload,
   },
 ];

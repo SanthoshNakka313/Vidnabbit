@@ -22,7 +22,7 @@ export default function HowItWorksPage() {
       <h2>What happens to my file?</h2>
       <p>
         We prepare the file on demand and give you a private download link. The file and the link
-        are deleted automatically after 1 hour. We don&apos;t keep a gallery of downloads and
+        are deleted automatically after 3 minutes. We don&apos;t keep a gallery of downloads and
         nobody else can browse them.
       </p>
 

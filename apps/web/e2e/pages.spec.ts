@@ -93,7 +93,7 @@ test("mobile menu opens, closes with Escape and restores focus", async ({ page, 
 
 test("home offers both products and each card opens its tool", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Nab it or convert it");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Nab it, convert it, land the job");
   await page.getByRole("link", { name: "VidNabbit", exact: true }).last().click();
   await expect(page).toHaveURL(/\/download$/);
   await expect(page.getByLabel("Paste a link")).toBeVisible();

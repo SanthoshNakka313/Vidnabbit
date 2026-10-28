@@ -84,7 +84,7 @@ export default function Page() {
           Rights holders can block their content through our{" "}
           <Link href="/copyright">copyright and takedown page</Link>.
         </li>
-        <li>We don&apos;t host content: files are deleted after 1 hour.</li>
+        <li>We don&apos;t host content: files are deleted after 3 minutes.</li>
       </ul>
       <p>
         You are still responsible for what you download. Our <Link href="/terms">Terms</Link> ask you

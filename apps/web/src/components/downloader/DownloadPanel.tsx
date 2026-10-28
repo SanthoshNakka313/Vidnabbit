@@ -38,12 +38,15 @@ export function stageText(job: JobResponse | null, data: ExtractResponse, format
   return "Preparing your file…";
 }
 
-function minutesLeft(expiresAt: string | null, now: number): number | null {
+function secondsLeft(expiresAt: string | null, now: number): number | null {
   if (!expiresAt) return null;
   const t = Date.parse(expiresAt);
   if (Number.isNaN(t)) return null;
-  return Math.max(0, Math.ceil((t - now) / 60000));
+  return Math.max(0, Math.ceil((t - now) / 1000));
 }
+
+/** 177 -> "2:57" */
+const clock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
 function DoneView({
   job,
@@ -62,11 +65,11 @@ function DoneView({
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     saveRef.current?.focus();
-    const t = setInterval(() => setNow(Date.now()), 15_000);
+    const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
-  // The contract promises a 1 hour TTL; fall back to that if expires_at is missing.
-  const left = minutesLeft(job.expires_at, now) ?? 60;
+  // The contract promises a 3 minute TTL; fall back to that if expires_at is missing.
+  const left = secondsLeft(job.expires_at, now) ?? 180;
   const expired = left <= 0;
 
   if (expired) {
@@ -107,8 +110,12 @@ function DoneView({
           Save file
         </a>
         <p className="tabular text-sm text-text">
-          Expires in 1 hour
-          <span className="text-muted"> ({left} min left)</span>
+          {/* Announce once, not every second. */}
+          <span className="sr-only">This file is deleted 3 minutes after it is ready.</span>
+          <span aria-hidden="true">
+            Save within <strong className={left <= 30 ? "text-danger" : undefined}>{clock(left)}</strong>
+            <span className="text-muted"> · then it&apos;s deleted</span>
+          </span>
         </p>
       </div>
       <div className="mt-3 flex flex-wrap gap-x-2">

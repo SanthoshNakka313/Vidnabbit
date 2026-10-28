@@ -25,7 +25,7 @@ export default function TermsPage() {
       <p>
         VidNabbit is a free tool that turns media from public web pages into files you can save. We
         don&apos;t host or index content and there is no gallery to browse. A file is made only when
-        you ask for it and is deleted automatically within 1 hour.
+        you ask for it and is deleted automatically within 3 minutes.
       </p>
 
       <h2>2. Who can use it</h2>

@@ -56,7 +56,7 @@ test.describe("download flow (mock API)", () => {
     await expect(save).toBeVisible({ timeout: 15_000 });
     await expect(save).toBeFocused();
     await expect(save).toHaveAttribute("href", /\/mock\/vidnabbit-sample\.txt$/);
-    await expect(page.getByText("Expires in 1 hour")).toBeVisible();
+    await expect(page.getByText(/Save within [0-3]:\d\d/)).toBeVisible();
     await expect(page.getByTestId("job-done").getByTestId("copyright-notice")).toBeVisible();
     await expect(page.getByTestId("live-region")).toHaveText("Your file is ready");
 

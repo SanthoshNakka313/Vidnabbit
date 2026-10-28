@@ -48,7 +48,7 @@ export default function Page() {
           Pick <strong>Best</strong> for a master copy (up to 4K where your upload has it), or MP3 /
           M4A for audio-only posts.
         </li>
-        <li>Download the file. The link works for about 1 hour, then the file is deleted from our side.</li>
+        <li>Download the file. The link works for 3 minutes, then the file is deleted from our side.</li>
       </ol>
 
       <h2>Private, unlisted or members-only posts</h2>

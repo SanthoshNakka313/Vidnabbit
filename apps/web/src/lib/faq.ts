@@ -34,7 +34,7 @@ export const homeFaq: FaqItem[] = [
   {
     q: "Do you keep my files?",
     a:
-      "No. Files are prepared when you ask for them and deleted automatically after 1 hour. There is no public gallery, and nobody else can browse your downloads.",
+      "No. Files are prepared when you ask for them and deleted automatically after 3 minutes. There is no public gallery, and nobody else can browse your downloads.",
   },
   {
     q: "Do you need my password or cookies?",

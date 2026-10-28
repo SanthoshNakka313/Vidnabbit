@@ -19,7 +19,7 @@ export default function PrivacyPage() {
       <ul>
         <li>No accounts, no sign-up, no ads and no third-party tracking or analytics scripts.</li>
         <li>We never ask for, store or use your passwords, cookies or login sessions for other sites.</li>
-        <li>Downloaded files are deleted automatically within 1 hour.</li>
+        <li>Downloaded files, and the link you pasted, are deleted automatically within 3 minutes.</li>
         <li>We don&apos;t sell or share your personal information.</li>
       </ul>
 
@@ -37,7 +37,7 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong>The file you download</strong>, stored only so you can fetch it, then deleted
-          automatically within 1 hour.
+          automatically within 3 minutes.
         </li>
         <li>
           <strong>Takedown requests</strong>: if you send one, we keep your name, email,
@@ -61,7 +61,7 @@ export default function PrivacyPage() {
       <ul>
         <li>
           <strong>Cloudflare</strong> delivers the website, runs the Turnstile bot check before
-          downloads, stores files for up to 1 hour (R2) and forwards email. Cloudflare processes
+          downloads, stores files for up to 3 minutes (R2) and forwards email. Cloudflare processes
           technical data about your browser to do this, under its own privacy policy.
         </li>
         <li>

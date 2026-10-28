@@ -57,7 +57,7 @@ export function siteGraph() {
           "Save audio as MP3 (192 kbps) or M4A",
           "Save images at their original resolution",
           "No sign-up, no passwords or cookies",
-          "Files deleted automatically after 1 hour",
+          "Files deleted automatically after 3 minutes",
         ],
         offers: {
           "@type": "Offer",

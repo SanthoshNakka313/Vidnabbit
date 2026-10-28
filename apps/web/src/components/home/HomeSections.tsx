@@ -15,7 +15,7 @@ import { badgeSun, pill } from "../ui/styles";
 export function TrustRow() {
   const items = [
     { Icon: IconSparkle, label: "Free, no sign-up" },
-    { Icon: IconClock, label: "Deleted after 1 hour" },
+    { Icon: IconClock, label: "Deleted after 3 minutes" },
     { Icon: IconLock, label: "No logins needed" },
     { Icon: IconShield, label: "No DRM bypassing" },
   ];
@@ -45,7 +45,7 @@ const FEATURES = [
   {
     Icon: IconLock,
     title: "Private by design",
-    body: "No account, and we never use your logins or cookies for other sites. Your file is deleted from our servers after 1 hour.",
+    body: "No account, and we never use your logins or cookies for other sites. Your file is deleted from our servers after 3 minutes.",
   },
   {
     Icon: IconShield,

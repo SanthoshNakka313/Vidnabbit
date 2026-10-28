@@ -18,7 +18,7 @@ export default function CopyrightPage() {
       <p>Last updated: {LEGAL_UPDATED}</p>
       <p>
         VidNabbit respects the rights of creators. We don&apos;t host content: files are produced
-        on request from public pages and deleted automatically within 1 hour. We never bypass DRM
+        on request from public pages and deleted automatically within 3 minutes. We never bypass DRM
         and never process content that needs a sign-in. If you believe VidNabbit is being used to
         copy your work without permission, tell us and we&apos;ll act quickly.
       </p>

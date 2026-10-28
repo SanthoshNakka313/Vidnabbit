@@ -1,16 +1,17 @@
 import Link from "next/link";
-import { IconArrowRight, IconConvert } from "../icons";
+import { IconArrowRight, IconConvert, IconResume } from "../icons";
 
 /**
- * The site's two products. VidNabbit downloads media from links; Convabbit
- * converts files on the visitor's device. Names are split like the logo
- * wordmark: ink first half, rose second half.
+ * The site's products. VidNabbit downloads media from links; Convabbit converts
+ * files and ResuNabbit checks and polishes resumes, both on the visitor's device.
+ * Names are split like the logo wordmark: ink first half, rose second half.
  */
-export type ProductId = "vidnabbit" | "convabbit";
+export type ProductId = "vidnabbit" | "convabbit" | "resunabbit";
 
 export const PRODUCTS = {
   vidnabbit: { name: ["Vid", "Nabbit"], href: "/download", label: "Downloader" },
   convabbit: { name: ["Conv", "abbit"], href: "/convert/images", label: "Converter" },
+  resunabbit: { name: ["Resu", "Nabbit"], href: "/resume/ats-checker", label: "Resume tools" },
 } as const;
 
 export function ProductName({ id, className = "" }: { id: ProductId; className?: string }) {
@@ -25,7 +26,7 @@ export function ProductName({ id, className = "" }: { id: ProductId; className?:
 
 /**
  * Product icon. VidNabbit uses the official app icon (BRAND.md: never redraw it).
- * Convabbit has no logo yet, so it gets a plain "convert" glyph on the brand gradient.
+ * Convabbit and ResuNabbit have no logos yet, so each gets a plain glyph on the brand gradient.
  */
 const ICON_SIZES = { sm: ["size-7", 16], lg: ["size-14 sm:size-16", 32] } as const;
 
@@ -37,9 +38,10 @@ export function ProductIcon({ id, size = "lg" }: { id: ProductId; size?: keyof t
       <img src="/brand/vidnabbit-icon.svg" alt="" aria-hidden="true" width={64} height={64} className={`${cls} shrink-0 rounded-[22%]`} />
     );
   }
+  const Glyph = id === "convabbit" ? IconConvert : IconResume;
   return (
     <span aria-hidden="true" className={`${cls} inline-flex shrink-0 items-center justify-center rounded-[22%] bg-brand-gradient text-white`}>
-      <IconConvert size={glyph} strokeWidth={2.4} />
+      <Glyph size={glyph} strokeWidth={2.2} />
     </span>
   );
 }
@@ -57,7 +59,11 @@ export function ProductEyebrow({ product }: { product: ProductId }) {
 
 /** One-line hop to the other product, under a page's main tool. */
 export function ProductSwitch({ to }: { to: ProductId }) {
-  const text = to === "convabbit" ? "Need to convert a file instead?" : "Need to save a video, song or image from a link?";
+  const text = {
+    convabbit: "Need to convert a file instead?",
+    vidnabbit: "Need to save a video, song or image from a link?",
+    resunabbit: "Applying for jobs? Check your resume's ATS score.",
+  }[to];
   return (
     <p className="text-center text-sm text-muted">
       {text}{" "}

@@ -80,7 +80,7 @@ export default function Page() {
           Pick a format. MP4 720p is a good default for classrooms; pick Best if you&apos;ll edit it.
           See <Link href="/formats">formats and quality</Link>.
         </li>
-        <li>Download the file within about 1 hour, before the link expires.</li>
+        <li>Save the file within 3 minutes, before the link expires.</li>
       </ol>
 
       <h2>Credit the creator</h2>

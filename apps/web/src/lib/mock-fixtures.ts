@@ -10,7 +10,7 @@ import type {
   MediaFormat,
 } from "./api-types";
 
-const inOneHour = () => new Date(Date.now() + 60 * 60 * 1000).toISOString();
+const inThreeMinutes = () => new Date(Date.now() + 3 * 60 * 1000).toISOString();
 
 function videoFormat(
   format_id: string,
@@ -90,7 +90,7 @@ export function videoExtractFixture(url: string): ExtractResponse {
       }),
       ...audioFormats,
     ],
-    expires_at: inOneHour(),
+    expires_at: inThreeMinutes(),
   };
 }
 
@@ -104,7 +104,7 @@ export function audioExtractFixture(url: string): ExtractResponse {
     thumbnail_url: null,
     media_type: "audio",
     formats: audioFormats,
-    expires_at: inOneHour(),
+    expires_at: inThreeMinutes(),
   };
 }
 
@@ -136,7 +136,7 @@ export function galleryExtractFixture(url: string): ExtractResponse {
       image(2, 3024, 4032, 5_020_114),
       image(3, 2048, 1365, 7_310_002),
     ],
-    expires_at: inOneHour(),
+    expires_at: inThreeMinutes(),
   };
 }
 
@@ -174,7 +174,7 @@ export const jobFixtures = {
     progress: 1,
     filename,
     download_url,
-    expires_at: inOneHour(),
+    expires_at: inThreeMinutes(),
     error: null,
   }),
   failed: (code: ContractErrorCode = "upstream_error"): JobResponse => ({

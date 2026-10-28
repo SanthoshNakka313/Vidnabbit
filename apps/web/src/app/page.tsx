@@ -18,6 +18,7 @@ interface ProductCardProps {
   chips: string[];
   /** Secondary destinations shown as small links (above the card's main link). */
   links?: { href: string; label: string }[];
+  className?: string;
 }
 
 /**
@@ -25,9 +26,9 @@ interface ProductCardProps {
  * card with ::after, so there is one tab stop and no nested links. Extra
  * links sit above it (relative z-10).
  */
-function ProductCard({ id, href, cta, title, points, chips, links }: ProductCardProps) {
+function ProductCard({ id, href, cta, title, points, chips, links, className = "" }: ProductCardProps) {
   return (
-    <article className="group relative flex overflow-hidden flex-col gap-5 rounded-xl border border-border bg-surface p-6 shadow-md transition-[transform,box-shadow,border-color] duration-200 ease-vn hover:-translate-y-1 hover:border-rose/40 hover:shadow-lg has-[a:focus-visible]:border-rose has-[a:focus-visible]:ring-4 has-[a:focus-visible]:ring-rose/25 sm:p-8">
+    <article className={`group relative flex overflow-hidden flex-col gap-5 rounded-xl border border-border bg-surface p-6 shadow-md transition-[transform,box-shadow,border-color] duration-200 ease-vn hover:-translate-y-1 hover:border-rose/40 hover:shadow-lg has-[a:focus-visible]:border-rose has-[a:focus-visible]:ring-4 has-[a:focus-visible]:ring-rose/25 sm:p-8 ${className}`}>
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-1.5 bg-brand-gradient opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100" />
       <div className="flex items-center gap-4">
         <ProductIcon id={id} />
@@ -89,6 +90,9 @@ function ProductCard({ id, href, cta, title, points, chips, links }: ProductCard
 
 /** Shortcuts straight into a tool, with the right options already picked. */
 const TASKS: { label: string; href: string; product: ProductId }[] = [
+  { label: "ATS resume score", href: "/resume/ats-checker", product: "resunabbit" },
+  { label: "Humanize my resume", href: "/resume/humanizer", product: "resunabbit" },
+  { label: "Resume to PDF", href: "/resume/pdf", product: "resunabbit" },
   { label: "HEIC to JPG", href: "/convert/images?to=jpeg", product: "convabbit" },
   { label: "Word to PDF", href: "/convert/documents?tool=word-to-pdf", product: "convabbit" },
   { label: "PDF to Word", href: "/convert/documents?tool=pdf-to-word", product: "convabbit" },
@@ -106,26 +110,26 @@ const TASKS: { label: string; href: string; product: ProductId }[] = [
 
 const PROMISES = [
   { Icon: IconSparkle, title: "Free, really", body: "No sign-up, no watermark, no limits on how often you use it." },
-  { Icon: IconLock, title: "Private", body: "Conversions happen on your device. Downloads are deleted from our servers after 1 hour." },
+  { Icon: IconLock, title: "Private", body: "Conversions and resume checks happen on your device. Downloads are deleted from our servers after 3 minutes." },
   { Icon: IconZap, title: "Fast on any device", body: "Works in Chrome, Safari, Edge and Firefox, on phones and computers." },
 ];
 
 const HUB_FAQ = [
   {
-    q: "What's the difference between VidNabbit and Convabbit?",
-    a: "VidNabbit saves videos, music and images from a public link, such as your own uploads or Creative Commons media. Convabbit converts files you already have: images between formats, Word to PDF, PDF to Word, and more.",
+    q: "What's the difference between VidNabbit, Convabbit and ResuNabbit?",
+    a: "VidNabbit saves videos, music and images from a public link, such as your own uploads or Creative Commons media. Convabbit converts files you already have: images between formats, Word to PDF, PDF to Word, and more. ResuNabbit scores your resume against applicant tracking systems, rewrites buzzwords into plain language, and turns your resume into a clean PDF or Word file from a template.",
   },
   {
     q: "Is it free?",
-    a: "Yes. Both are free to use with no account and no watermark.",
+    a: "Yes. All three are free to use with no account and no watermark.",
   },
   {
     q: "Are my files uploaded?",
-    a: "Convabbit never uploads your files: everything is converted in your browser. VidNabbit fetches media from the link you paste and deletes it from our servers after 1 hour.",
+    a: "Convabbit and ResuNabbit never upload your files: everything happens in your browser. VidNabbit fetches media from the link you paste and deletes it from our servers after 3 minutes.",
   },
   {
     q: "Can I use it on my phone?",
-    a: "Yes. Both work in any modern mobile browser. Saved files go to your phone's Downloads or Files app.",
+    a: "Yes. All three work in any modern mobile browser. Saved files go to your phone's Downloads or Files app.",
   },
 ];
 
@@ -138,15 +142,15 @@ export default function Hub() {
           <div className="flex flex-col items-center gap-5 text-center">
             <p className={`${pill} bg-sun text-ink`}>Free · No sign-up · Private</p>
             <h1 className="text-balance text-3xl sm:text-5xl">
-              Nab it or convert it. <span className="text-brand-gradient sm:block">Your free media toolbox.</span>
+              Nab it, convert it, land the job. <span className="text-brand-gradient sm:block">Your free toolbox.</span>
             </h1>
             <p className="max-w-2xl text-pretty text-lg text-muted">
-              Save videos, music and images from links with VidNabbit. Convert images and documents with Convabbit. Pick a
-              tool to start.
+              Save videos, music and images from links with VidNabbit. Convert images and documents with Convabbit. Check
+              and polish your resume with ResuNabbit. Pick a tool to start.
             </p>
           </div>
 
-          <div className="grid gap-5 md:grid-cols-2 md:gap-6">
+          <div className="grid gap-5 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
             <ProductCard
               id="vidnabbit"
               href="/download"
@@ -155,9 +159,13 @@ export default function Hub() {
               points={[
                 "Paste a public link, then pick the format",
                 "MP4 up to 4K, MP3 and M4A audio, original images",
-                "Files are deleted after 1 hour",
+                "Files are deleted after 3 minutes",
               ]}
               chips={["MP4", "MP3", "M4A", "JPG", "PNG", "4K"]}
+              links={[
+                { href: "/supported-sites", label: "Sites" },
+                { href: "/how-it-works", label: "How it works" },
+              ]}
             />
             <ProductCard
               id="convabbit"
@@ -165,14 +173,31 @@ export default function Hub() {
               cta="Convert files"
               title="Image and document converter"
               points={[
-                "Every common image format, including HEIC, RAW and SVG",
+                "Every image format, including HEIC, RAW and SVG",
                 "Word to PDF, PDF to Word, merge PDFs",
-                "Runs in your browser: files never leave your device",
+                "Runs in your browser: never uploaded",
               ]}
               chips={["JPG", "PNG", "WebP", "HEIC", "AVIF", "SVG", "PDF", "DOCX"]}
               links={[
                 { href: "/convert/images", label: "Images" },
                 { href: "/convert/documents", label: "Documents" },
+              ]}
+            />
+            <ProductCard
+              id="resunabbit"
+              href="/resume/ats-checker"
+              className="md:col-span-2 lg:col-span-1"
+              cta="Check my resume"
+              title="Resume checker, humanizer and PDF maker"
+              points={[
+                "ATS score with missing keywords and fixes",
+                "Humanizer for buzzwords and AI-sounding phrases",
+                "Resume to PDF with four ATS-friendly templates",
+              ]}
+              chips={["ATS score", "Keywords", "Humanizer", "Templates", "PDF", "DOCX"]}
+              links={[
+                { href: "/resume/humanizer", label: "Humanizer" },
+                { href: "/resume/pdf", label: "To PDF" },
               ]}
             />
           </div>
@@ -213,7 +238,7 @@ export default function Hub() {
 
         <Faq items={HUB_FAQ} headingId="hub-faq-heading" />
         <p className="-mt-8 flex items-center justify-center gap-1.5 text-center text-sm text-muted">
-          <IconClock size={16} /> Downloads are deleted after 1 hour. Conversions never leave your device.
+          <IconClock size={16} /> Downloads are deleted after 3 minutes. Conversions and resumes never leave your device.
         </p>
       </div>
     </>
